@@ -1,15 +1,36 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { ALL_FACILITIES_ID, facilities } from "../../../data/mockAdminData";
-import { VenueContext, type VenueContextValue } from "./VenueContext";
+import { ALL_FACILITIES_ID, VenueContext, type VenueContextValue } from "./VenueContext";
+import { getFields } from "../api/venueApi";
+import type { Facility } from "../types/venue.types";
 
 interface VenueProviderProps {
   children: ReactNode;
 }
 
 export function VenueProvider({ children }: VenueProviderProps) {
+  const [facilities, setFacilities] = useState<Facility[]>([]);
   const [selectedVenueId, setSelectedVenueId] =
     useState<string>(ALL_FACILITIES_ID);
+
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      try {
+        const fields = await getFields();
+        const formattedFacilities: Facility[] = fields.map((field) => ({
+          id: String(field.id),
+          apiFacilityId: String(field.id),
+          name: field.name,
+          address: field.address || "",
+        }));
+        setFacilities(formattedFacilities);
+      } catch (error) {
+        console.error("Error fetching facilities:", error);
+      }
+    };
+
+    fetchFacilities();
+  }, []);
 
   const value = useMemo<VenueContextValue>(() => {
     const selectedVenue =
@@ -24,7 +45,7 @@ export function VenueProvider({ children }: VenueProviderProps) {
       selectedVenue,
       setSelectedVenueId,
     };
-  }, [selectedVenueId]);
+  }, [facilities, selectedVenueId]);
 
   return (
     <VenueContext.Provider value={value}>{children}</VenueContext.Provider>

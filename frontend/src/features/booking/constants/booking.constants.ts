@@ -1,6 +1,6 @@
 import type { SlotStatus } from "../types/booking.types";
 
-export const ALL_FACILITIES_ID = "ALL";
+export { ALL_FACILITIES_ID } from "../../venue/model/VenueContext";
 
 export const slotStatusStyles: Record<
   SlotStatus,

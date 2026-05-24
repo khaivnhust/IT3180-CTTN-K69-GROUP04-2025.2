@@ -6,7 +6,7 @@ import {
 } from "../../constants/booking.constants";
 import type { FieldScheduleRow, ScheduleSlot } from "../../types/booking.types";
 import { slotStatusStyles } from "../../constants/booking.constants";
-import { formatMoney, getRangeLabel } from "../../utils/booking.utils";
+import { getRangeLabel } from "../../utils/booking.utils";
 import { useVenueContext as useFacilityContext } from "../../../venue/hooks/useVenueContext";
 
 interface FieldScheduleTableProps {
@@ -36,12 +36,6 @@ export function FieldScheduleTable({
             {ADMIN_TIME_SLOTS.map((timeSlot) => {
               const priceMeta = TIME_SLOT_PRICING[timeSlot];
               const isGoldenHour = priceMeta.tier === "golden";
-              const badgeClass =
-                priceMeta.tier === "off-peak"
-                  ? "bg-white/16 text-white/95"
-                  : priceMeta.tier === "transition"
-                    ? "bg-amber-300/30 text-amber-50"
-                    : "bg-lime-300/40 text-[#15381a]";
 
               return (
                 <th
@@ -55,11 +49,6 @@ export function FieldScheduleTable({
                   <p className="text-sm font-semibold leading-tight">
                     {getRangeLabel(timeSlot)}
                   </p>
-                  <span
-                    className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${badgeClass}`}
-                  >
-                    {formatMoney(priceMeta.price)} - {priceMeta.tierLabel}
-                  </span>
                 </th>
               );
             })}
