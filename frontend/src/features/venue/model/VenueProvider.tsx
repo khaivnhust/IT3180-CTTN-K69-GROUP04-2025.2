@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { ALL_FACILITIES_ID, VenueContext, type VenueContextValue } from "./VenueContext";
+import {
+  ALL_FACILITIES_ID,
+  VenueContext,
+  type VenueContextValue,
+} from "./VenueContext";
 import { getFields } from "../api/venueApi";
 import type { Facility } from "../types/venue.types";
 
@@ -24,6 +28,14 @@ export function VenueProvider({ children }: VenueProviderProps) {
           address: field.address || "",
         }));
         setFacilities(formattedFacilities);
+
+        // Auto-select first facility if available and no facility is selected
+        if (
+          formattedFacilities.length > 0 &&
+          selectedVenueId === ALL_FACILITIES_ID
+        ) {
+          setSelectedVenueId(formattedFacilities[0].id);
+        }
       } catch (error) {
         console.error("Error fetching facilities:", error);
       }
