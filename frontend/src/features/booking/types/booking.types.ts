@@ -1,4 +1,4 @@
-export type SlotStatus = 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE';
+export type SlotStatus = "AVAILABLE" | "BOOKED" | "MAINTENANCE";
 
 export interface ScheduleSlotDto {
   timeSlotId: number;
@@ -35,3 +35,21 @@ export interface FieldScheduleRow {
 }
 
 export type PitchPhysicalStatus = "active" | "maintenance" | "disabled";
+
+export interface CreateBookingRequest {
+  pitchId: number;
+  bookingDate: string; // YYYY-MM-DD
+  slotNumber: number;
+}
+
+export interface PlayerBookingResponse {
+  id: number;
+  pitchId: number;
+  pitchName: string;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  totalPrice: string | number;
+  depositAmount: string | number;
+  status: string;
+}

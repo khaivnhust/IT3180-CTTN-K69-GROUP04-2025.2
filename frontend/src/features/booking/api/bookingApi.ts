@@ -1,5 +1,9 @@
 import apiClient from "@/shared/api/apiClient";
-import type { SpringPageResponse } from "../../venue/api/venueApi";
+import type { SpringPageResponse } from "@/features/venue/api/venueApi";
+import type {
+  CreateBookingRequest,
+  PlayerBookingResponse,
+} from "@/features/booking/types/booking.types";
 
 export interface AdminBookingSummaryResponse {
   id: number;
@@ -7,17 +11,17 @@ export interface AdminBookingSummaryResponse {
   customerPhone: string;
   venueName: string;
   pitchName: string;
-  bookingDate: string;   // "2026-04-18"
-  startTime: string;     // "17:00:00"
-  endTime: string;       // "18:30:00"
+  bookingDate: string; // "2026-04-18"
+  startTime: string; // "17:00:00"
+  endTime: string; // "18:30:00"
   totalPrice: number;
   depositAmount: number;
-  status: string;        // "RESERVED" | "BOOKED" | "PLAYING" | "COMPLETED" | "CANCELLED"
+  status: string; // "RESERVED" | "BOOKED" | "PLAYING" | "COMPLETED" | "CANCELLED"
 }
 
 /**
- * Lấy danh sách đơn đặt sân (admin), lọc theo venueId nếu có.
- * Backend trả về Page<AdminBookingSummaryResponse>.
+ * Lay danh sach don dat san (admin), loc theo venueId neu co.
+ * Backend tra ve Page<AdminBookingSummaryResponse>.
  */
 export const fetchOrdersByVenue = async (
   venueId: string,
@@ -38,7 +42,7 @@ export const fetchOrdersByVenue = async (
 };
 
 /**
- * Cập nhật trạng thái đơn đặt sân.
+ * Cap nhat trang thai don dat san.
  */
 export const updateOrderStatusApi = async (
   orderId: number,
@@ -49,4 +53,14 @@ export const updateOrderStatusApi = async (
     status,
     adminNote,
   });
+};
+
+export const createBooking = async (
+  payload: CreateBookingRequest,
+): Promise<PlayerBookingResponse> => {
+  const response = await apiClient.post<PlayerBookingResponse>(
+    "/player/bookings",
+    payload,
+  );
+  return response.data;
 };
