@@ -86,7 +86,6 @@ public class VenuePlayerService {
         List<Booking> bookings = bookingRepository.findConfirmedByPitchIdAndBookingDate(pitchId, date);
         List<PriceRule> priceRules = pitch.getPriceRules() == null ? List.of() : pitch.getPriceRules();
 
-<<<<<<< HEAD
         // Create map: timeSlotId -> Booking (for O(1) lookup)
         Map<Integer, Booking> slotBookingMap = new HashMap<>();
         for (Booking booking : bookings) {
@@ -94,14 +93,6 @@ public class VenuePlayerService {
                 slotBookingMap.put(booking.getTimeSlot().getId(), booking);
             }
         }
-=======
-        return java.util.stream.IntStream.rangeClosed(MIN_SLOT_NUMBER, MAX_SLOT_NUMBER)
-                .mapToObj(slotNumber -> {
-                    LocalTime startTime = calculateStartTime(slotNumber);
-                    LocalTime endTime = startTime.plusMinutes(SLOT_DURATION_MINUTES);
-                    BigDecimal price = findPrice(priceRules, slotNumber, weekend);
-                    String status = pitchBookings.containsKey(startTime) ? "BOOKED" : "AVAILABLE";
->>>>>>> af6d7b6 (Revert "render dynamic slots#69")
 
         boolean isWeekend = isWeekend(date);
         String filterLower = filter == null ? "all" : filter.toLowerCase();
@@ -199,12 +190,17 @@ public class VenuePlayerService {
         return lookup;
     }
 
-    private BigDecimal findPrice(List<PriceRule> priceRules, Integer slotNumber, boolean weekend) {
+    private BigDecimal findPrice(
+            List<PriceRule> priceRules,
+            Integer slotNumber,
+            boolean weekend,
+            BigDecimal basePrice
+    ) {
         return priceRules.stream()
                 .filter(rule -> slotNumber.equals(rule.getSlotNumber()) && weekend == Boolean.TRUE.equals(rule.getIsWeekend()))
                 .map(PriceRule::getPrice)
                 .findFirst()
-                .orElse(null);
+                .orElse(basePrice);
     }
 
 

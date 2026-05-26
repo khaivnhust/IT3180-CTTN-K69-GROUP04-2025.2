@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `time_slots` (
     `slot_number` INT NOT NULL,
     `start_time` TIME NOT NULL,
     `end_time` TIME NOT NULL,
-    `is_active` BIT(1) NOT NULL DEFAULT b'1',
+    `is_active` BIT(1) NOT NULL DEFAULT 1,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_time_slots_pitch_id`
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`) ON DELETE CASCADE,
@@ -86,23 +86,16 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `booking_type` VARCHAR(255),
     `total_price` DECIMAL(38,2),
     `created_at` DATETIME,
-<<<<<<< HEAD
     `time_slot_id` INT NOT NULL,
-=======
->>>>>>> af6d7b6 (Revert "render dynamic slots#69")
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_bookings_player_id`
         FOREIGN KEY (`player_id`) REFERENCES `users` (`id`),
     CONSTRAINT `fk_bookings_pitch_id`
-<<<<<<< HEAD
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
     CONSTRAINT `fk_bookings_time_slot_id`
         FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`),
     CONSTRAINT `uk_bookings_date_slot`
         UNIQUE (`booking_date`, `time_slot_id`)
-=======
-        FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`)
->>>>>>> af6d7b6 (Revert "render dynamic slots#69")
 );
 
 CREATE TABLE IF NOT EXISTS `pitch_reviews` (
@@ -134,4 +127,3 @@ CREATE TABLE IF NOT EXISTS `booking_payments` (
     CONSTRAINT `fk_booking_payments_payer_id`
         FOREIGN KEY (`payer_id`) REFERENCES `users` (`id`)
 );
-

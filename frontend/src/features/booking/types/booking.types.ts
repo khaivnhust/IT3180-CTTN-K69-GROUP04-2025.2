@@ -36,11 +36,18 @@ export interface FieldScheduleRow {
 
 export type PitchPhysicalStatus = "active" | "maintenance" | "disabled";
 
+<<<<<<< HEAD
 
 export interface CreateBookingRequest {
   pitchId: number;
   bookingDate: string; // YYYY-MM-DD
   timeSlotId: number;
+=======
+export interface CreateBookingRequest {
+  pitchId: number;
+  bookingDate: string; // YYYY-MM-DD
+  slotNumber: number;
+>>>>>>> feat/render-dynamic-slots
 }
 
 export interface PlayerBookingResponse {

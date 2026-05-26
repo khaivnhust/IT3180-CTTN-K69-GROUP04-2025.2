@@ -54,11 +54,17 @@ export interface SlotPriceResponse {
   weekendPrice: BigDecimal | number;
 }
 
+<<<<<<< HEAD
 
 export type SlotBookingStatus = "AVAILABLE" | "BOOKED";
 
 export interface SlotStatusResponse {
   timeSlotId: number;
+=======
+export type SlotBookingStatus = "AVAILABLE" | "BOOKED";
+
+export interface SlotStatusResponse {
+>>>>>>> feat/render-dynamic-slots
   slotNumber: number;
   startTime: string; // LocalTime (HH:mm:ss or HH:mm)
   endTime: string; // LocalTime (HH:mm:ss or HH:mm)
@@ -85,7 +91,10 @@ export interface VenueAvailabilityResponse {
   pitches: PitchAvailabilityResponse[];
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> feat/render-dynamic-slots
 // Mock/UI types (backward compatible)
 export interface Facility {
   id: string;

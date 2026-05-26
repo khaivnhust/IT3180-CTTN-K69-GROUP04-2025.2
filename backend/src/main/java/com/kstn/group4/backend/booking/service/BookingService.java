@@ -287,14 +287,11 @@ public class BookingService {
         BigDecimal totalPrice = priceRuleRepository
                 .findByPitchIdAndSlotNumberAndIsWeekend(pitch.getId(), timeSlot.getSlotNumber(), isWeekend)
                 .map(PriceRule::getPrice)
-<<<<<<< HEAD
                 .orElseGet(pitch::getBasePrice);
         if (totalPrice == null) {
             throw new BusinessException("Chua co gia cho ca nay", "PRICE_NOT_SET");
         }
-=======
-                .orElseThrow(() -> new BusinessException("Chưa có giá cho ca này", "PRICE_NOT_SET"));
->>>>>>> af6d7b6 (Revert "render dynamic slots#69")
+
         BigDecimal depositAmount = calculateDepositAmount(totalPrice);
 
         // ==================== STEP 6: Create and Save Booking ====================

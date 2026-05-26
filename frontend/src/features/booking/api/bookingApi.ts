@@ -1,10 +1,14 @@
 import apiClient from "@/shared/api/apiClient";
+<<<<<<< HEAD
 import type { SpringPageResponse } from "@/features/venue/api/venueApi";
+=======
+>>>>>>> feat/render-dynamic-slots
 import type {
   CreateBookingRequest,
   PlayerBookingResponse,
 } from "@/features/booking/types/booking.types";
 
+<<<<<<< HEAD
 export interface AdminBookingSummaryResponse {
   id: number;
   customerName: string;
@@ -55,6 +59,8 @@ export const updateOrderStatusApi = async (
   });
 };
 
+=======
+>>>>>>> feat/render-dynamic-slots
 export const createBooking = async (
   payload: CreateBookingRequest,
 ): Promise<PlayerBookingResponse> => {
@@ -64,3 +70,7 @@ export const createBooking = async (
   );
   return response.data;
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> feat/render-dynamic-slots
