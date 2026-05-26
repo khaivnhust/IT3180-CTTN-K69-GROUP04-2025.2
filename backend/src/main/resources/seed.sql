@@ -47,15 +47,15 @@ ALTER TABLE `booking_payments` AUTO_INCREMENT = 1;
 -- Password: "password123" -> BCrypt encoded
 INSERT INTO
     `users` (
-        `id`,
-        `username`,
-        `email`,
-        `password`,
-        `role`,
-        `created_at`,
-        `phone_number`,
-        `avatar_url`
-    )
+    `id`,
+    `username`,
+    `email`,
+    `password`,
+    `role`,
+    `created_at`,
+    `phone_number`,
+    `avatar_url`
+)
 VALUES
     (
         1,
@@ -93,15 +93,15 @@ VALUES
 -- =========================
 INSERT INTO
     `venues` (
-        `id`,
-        `name`,
-        `address`,
-        `description`,
-        `image_url`,
-        `manager_id`,
-        `open_time`,
-        `close_time`
-    )
+    `id`,
+    `name`,
+    `address`,
+    `description`,
+    `image_url`,
+    `manager_id`,
+    `open_time`,
+    `close_time`
+)
 VALUES
     (
         1,
@@ -120,13 +120,13 @@ VALUES
 -- Pitch types: SAN_5 (5-a-side), SAN_7 (7-a-side), SAN_11 (full size)
 INSERT INTO
     `pitches` (
-        `id`,
-        `name`,
-        `pitch_type`,
-        `is_active`,
-        `base_price`,
-        `venue_id`
-    )
+    `id`,
+    `name`,
+    `pitch_type`,
+    `is_active`,
+    `base_price`,
+    `venue_id`
+)
 VALUES
     (1, 'San 1 - 5 Nguoi', 'SAN_5', 1, 150000, 1),
     (2, 'San 2 - 5 Nguoi', 'SAN_5', 1, 150000, 1),
@@ -307,17 +307,18 @@ VALUES
 -- 8. BOOKINGS FOR 2026-06-06 TEST DATA
 -- =========================
 -- 1. Booking thành công: Sân 1, 17:00 - 18:30 (time_slot_id = 8)
-INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`) 
+INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`)
 VALUES (2, 1, '2026-06-06', '17:00:00', '18:30:00', 'CONFIRMED', 'SINGLE', 150000, NOW(), 8);
 
 -- 2. Booking thành công: Sân 2, 18:30 - 20:00 (time_slot_id = 20)
-INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`) 
+INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`)
 VALUES (3, 2, '2026-06-06', '18:30:00', '20:00:00', 'CONFIRMED', 'SINGLE', 180000, NOW(), 20);
 
--- 3. Slot Bảo trì (MAINTENANCE): Sân 3, 08:00 - 09:30 (time_slot_id = 24)
-INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`) 
+-- 3. Slot Bao tri (MAINTENANCE): San 3, 08:00 - 09:30 (time_slot_id = 24)
+INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`)
 VALUES (1, 3, '2026-06-06', '08:00:00', '09:30:00', 'MAINTENANCE', 'MAINTENANCE', 0, NOW(), 24);
 
--- 4. Slot Bảo trì (MAINTENANCE): Sân 3, 09:30 - 11:00 (time_slot_id = 25)
-INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`) 
+-- 4. Slot Bao tri (MAINTENANCE): San 3, 09:30 - 11:00 (time_slot_id = 25)
+INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`)
 VALUES (1, 3, '2026-06-06', '09:30:00', '11:00:00', 'MAINTENANCE', 'MAINTENANCE', 0, NOW(), 25);
+

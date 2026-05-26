@@ -54,6 +54,36 @@ export interface SlotPriceResponse {
   weekendPrice: BigDecimal | number;
 }
 
+export type SlotBookingStatus = "AVAILABLE" | "BOOKED";
+
+export interface SlotStatusResponse {
+  timeSlotId: number;
+  slotNumber: number;
+  startTime: string; // LocalTime (HH:mm:ss or HH:mm)
+  endTime: string; // LocalTime (HH:mm:ss or HH:mm)
+  price: BigDecimal | number | null;
+  status: SlotBookingStatus;
+}
+
+export interface TimeSlotRange {
+  startTime: string;
+  endTime: string;
+}
+
+export interface PitchAvailabilityResponse {
+  pitchId: number;
+  pitchName: string;
+  pitchType: string;
+  slots: SlotStatusResponse[];
+}
+
+export interface VenueAvailabilityResponse {
+  venueId: number;
+  venueName: string;
+  date: string; // YYYY-MM-DD
+  pitches: PitchAvailabilityResponse[];
+}
+
 // Mock/UI types (backward compatible)
 export interface Facility {
   id: string;
