@@ -10,8 +10,6 @@ DELETE FROM `pitch_reviews`;
 
 DELETE FROM `bookings`;
 
-DELETE FROM `time_slots`;
-
 DELETE FROM `services`;
 
 DELETE FROM `price_rules`;
@@ -33,8 +31,6 @@ ALTER TABLE `price_rules` AUTO_INCREMENT = 1;
 
 ALTER TABLE `services` AUTO_INCREMENT = 1;
 
-ALTER TABLE `time_slots` AUTO_INCREMENT = 1;
-
 ALTER TABLE `bookings` AUTO_INCREMENT = 1;
 
 ALTER TABLE `pitch_reviews` AUTO_INCREMENT = 1;
@@ -47,15 +43,15 @@ ALTER TABLE `booking_payments` AUTO_INCREMENT = 1;
 -- Password: "password123" -> BCrypt encoded
 INSERT INTO
     `users` (
-    `id`,
-    `username`,
-    `email`,
-    `password`,
-    `role`,
-    `created_at`,
-    `phone_number`,
-    `avatar_url`
-)
+        `id`,
+        `username`,
+        `email`,
+        `password`,
+        `role`,
+        `created_at`,
+        `phone_number`,
+        `avatar_url`
+    )
 VALUES
     (
         1,
@@ -63,7 +59,7 @@ VALUES
         'hoang.owner@football.vn',
         '$2a$10$Y9O5YLMY2VVLvxPUQXUuZOBV0ZQTvEVjYQhxFQDXvJ5y3YJ1dQrGG',
         'ADMIN',
-        NOW(),
+        NOW (),
         '0909123456',
         NULL
     ),
@@ -73,7 +69,7 @@ VALUES
         'minh.player@football.vn',
         '$2a$10$slYQmyNdGzin7olVN3p5be3DlH.PKZbv5H8KnzzigXXbVxzy6QMOG',
         'PLAYER',
-        NOW(),
+        NOW (),
         '0912345678',
         NULL
     ),
@@ -83,7 +79,7 @@ VALUES
         'tuan.player@football.vn',
         '$2a$10$slYQmyNdGzin7olVN3p5be3DlH.PKZbv5H8KnzzigXXbVxzy6QMOG',
         'PLAYER',
-        NOW(),
+        NOW (),
         '0987654321',
         NULL
     );
@@ -93,15 +89,15 @@ VALUES
 -- =========================
 INSERT INTO
     `venues` (
-    `id`,
-    `name`,
-    `address`,
-    `description`,
-    `image_url`,
-    `manager_id`,
-    `open_time`,
-    `close_time`
-)
+        `id`,
+        `name`,
+        `address`,
+        `description`,
+        `image_url`,
+        `manager_id`,
+        `open_time`,
+        `close_time`
+    )
 VALUES
     (
         1,
@@ -120,13 +116,13 @@ VALUES
 -- Pitch types: SAN_5 (5-a-side), SAN_7 (7-a-side), SAN_11 (full size)
 INSERT INTO
     `pitches` (
-    `id`,
-    `name`,
-    `pitch_type`,
-    `is_active`,
-    `base_price`,
-    `venue_id`
-)
+        `id`,
+        `name`,
+        `pitch_type`,
+        `is_active`,
+        `base_price`,
+        `venue_id`
+    )
 VALUES
     (1, 'San 1 - 5 Nguoi', 'SAN_5', 1, 150000, 1),
     (2, 'San 2 - 5 Nguoi', 'SAN_5', 1, 150000, 1),
@@ -159,76 +155,7 @@ VALUES
     (5, 10, 1, 600000);
 
 -- =========================
--- 4. TIME SLOTS (11 slots per pitch, 90 minutes each from 06:30 to 23:00)
--- =========================
--- Slot schedule: 1=06:30-08:00, 2=08:00-09:30, ..., 11=21:30-23:00
-INSERT INTO
-    `time_slots` (`pitch_id`, `slot_number`, `start_time`, `end_time`, `is_active`)
-VALUES
-    -- Pitch 1 (5-a-side)
-    (1, 1, '06:30:00', '08:00:00', b'1'),
-    (1, 2, '08:00:00', '09:30:00', b'1'),
-    (1, 3, '09:30:00', '11:00:00', b'1'),
-    (1, 4, '11:00:00', '12:30:00', b'1'),
-    (1, 5, '12:30:00', '14:00:00', b'1'),
-    (1, 6, '14:00:00', '15:30:00', b'1'),
-    (1, 7, '15:30:00', '17:00:00', b'1'),
-    (1, 8, '17:00:00', '18:30:00', b'1'),
-    (1, 9, '18:30:00', '20:00:00', b'1'),
-    (1, 10, '20:00:00', '21:30:00', b'1'),
-    (1, 11, '21:30:00', '23:00:00', b'1'),
-    -- Pitch 2 (5-a-side)
-    (2, 1, '06:30:00', '08:00:00', b'1'),
-    (2, 2, '08:00:00', '09:30:00', b'1'),
-    (2, 3, '09:30:00', '11:00:00', b'1'),
-    (2, 4, '11:00:00', '12:30:00', b'1'),
-    (2, 5, '12:30:00', '14:00:00', b'1'),
-    (2, 6, '14:00:00', '15:30:00', b'1'),
-    (2, 7, '15:30:00', '17:00:00', b'1'),
-    (2, 8, '17:00:00', '18:30:00', b'1'),
-    (2, 9, '18:30:00', '20:00:00', b'1'),
-    (2, 10, '20:00:00', '21:30:00', b'1'),
-    (2, 11, '21:30:00', '23:00:00', b'1'),
-    -- Pitch 3 (7-a-side)
-    (3, 1, '06:30:00', '08:00:00', b'1'),
-    (3, 2, '08:00:00', '09:30:00', b'1'),
-    (3, 3, '09:30:00', '11:00:00', b'1'),
-    (3, 4, '11:00:00', '12:30:00', b'1'),
-    (3, 5, '12:30:00', '14:00:00', b'1'),
-    (3, 6, '14:00:00', '15:30:00', b'1'),
-    (3, 7, '15:30:00', '17:00:00', b'1'),
-    (3, 8, '17:00:00', '18:30:00', b'1'),
-    (3, 9, '18:30:00', '20:00:00', b'1'),
-    (3, 10, '20:00:00', '21:30:00', b'1'),
-    (3, 11, '21:30:00', '23:00:00', b'1'),
-    -- Pitch 4 (7-a-side)
-    (4, 1, '06:30:00', '08:00:00', b'1'),
-    (4, 2, '08:00:00', '09:30:00', b'1'),
-    (4, 3, '09:30:00', '11:00:00', b'1'),
-    (4, 4, '11:00:00', '12:30:00', b'1'),
-    (4, 5, '12:30:00', '14:00:00', b'1'),
-    (4, 6, '14:00:00', '15:30:00', b'1'),
-    (4, 7, '15:30:00', '17:00:00', b'1'),
-    (4, 8, '17:00:00', '18:30:00', b'1'),
-    (4, 9, '18:30:00', '20:00:00', b'1'),
-    (4, 10, '20:00:00', '21:30:00', b'1'),
-    (4, 11, '21:30:00', '23:00:00', b'1'),
-    -- Pitch 5 (11-a-side)
-    (5, 1, '06:30:00', '08:00:00', b'1'),
-    (5, 2, '08:00:00', '09:30:00', b'1'),
-    (5, 3, '09:30:00', '11:00:00', b'1'),
-    (5, 4, '11:00:00', '12:30:00', b'1'),
-    (5, 5, '12:30:00', '14:00:00', b'1'),
-    (5, 6, '14:00:00', '15:30:00', b'1'),
-    (5, 7, '15:30:00', '17:00:00', b'1'),
-    (5, 8, '17:00:00', '18:30:00', b'1'),
-    (5, 9, '18:30:00', '20:00:00', b'1'),
-    (5, 10, '20:00:00', '21:30:00', b'1'),
-    (5, 11, '21:30:00', '23:00:00', b'1');
-
--- =========================
 -- 5. SERVICES
--- =========================
 -- =========================
 INSERT INTO
     `services` (`pitch_id`, `name`, `price`, `unit`)
@@ -263,7 +190,7 @@ VALUES
 --         'RESERVED',
 --         'MATCH',
 --         500000.00,
---         NOW()
+--         NOW ()
 --     ),
 --     (
 --         2,
@@ -274,7 +201,7 @@ VALUES
 --         'RESERVED',
 --         'TOUR',
 --         900000.00,
---         NOW()
+--         NOW ()
 --     ),
 --     (
 --         2,
@@ -285,7 +212,7 @@ VALUES
 --         'PLAYING',
 --         'MATCH',
 --         900000.00,
---         NOW()
+--         NOW ()
 --     );
 -- =========================
 -- 7. REVIEWS (DISABLED FOR TEST COMPATIBILITY)
@@ -300,6 +227,7 @@ VALUES
 --         `created_at`
 --     )
 -- VALUES
+<<<<<<< HEAD
 --     (1, 2, 5, 'San dep, chat luong tot', NOW()),
 --     (2, 2, 4, 'Gia hop ly, anh sang on', NOW());
 
@@ -322,3 +250,7 @@ VALUES (1, 3, '2026-06-06', '08:00:00', '09:30:00', 'MAINTENANCE', 'MAINTENANCE'
 INSERT INTO `bookings` (`player_id`, `pitch_id`, `booking_date`, `start_time`, `end_time`, `status`, `booking_type`, `total_price`, `created_at`, `time_slot_id`)
 VALUES (1, 3, '2026-06-06', '09:30:00', '11:00:00', 'MAINTENANCE', 'MAINTENANCE', 0, NOW(), 25);
 
+=======
+--     (1, 2, 5, 'San dep, chat luong tot', NOW ()),
+--     (2, 2, 4, 'Gia hop ly, anh sang on', NOW ());
+>>>>>>> af6d7b6 (Revert "render dynamic slots#69")

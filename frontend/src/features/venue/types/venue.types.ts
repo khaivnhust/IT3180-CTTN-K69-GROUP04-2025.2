@@ -54,6 +54,7 @@ export interface SlotPriceResponse {
   weekendPrice: BigDecimal | number;
 }
 
+
 export type SlotBookingStatus = "AVAILABLE" | "BOOKED";
 
 export interface SlotStatusResponse {
@@ -83,6 +84,7 @@ export interface VenueAvailabilityResponse {
   date: string; // YYYY-MM-DD
   pitches: PitchAvailabilityResponse[];
 }
+
 
 // Mock/UI types (backward compatible)
 export interface Facility {

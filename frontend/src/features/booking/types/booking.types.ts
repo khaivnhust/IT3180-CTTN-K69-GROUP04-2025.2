@@ -36,6 +36,7 @@ export interface FieldScheduleRow {
 
 export type PitchPhysicalStatus = "active" | "maintenance" | "disabled";
 
+
 export interface CreateBookingRequest {
   pitchId: number;
   bookingDate: string; // YYYY-MM-DD
@@ -53,3 +54,4 @@ export interface PlayerBookingResponse {
   depositAmount: string | number;
   status: string;
 }
+
