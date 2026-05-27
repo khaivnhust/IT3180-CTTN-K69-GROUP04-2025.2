@@ -57,6 +57,7 @@ export interface SlotPriceResponse {
 export type SlotBookingStatus = "AVAILABLE" | "BOOKED";
 
 export interface SlotStatusResponse {
+  timeSlotId: number;
   slotNumber: number;
   startTime: string; // LocalTime (HH:mm:ss or HH:mm)
   endTime: string; // LocalTime (HH:mm:ss or HH:mm)
