@@ -3,7 +3,7 @@ import { VenueCard, useVenueList } from "../../features/venue";
 import { PlayerNavBar } from "../../layouts/player/PlayerNavBar";
 
 export function BookingPage() {
-  const { venues } = useVenueList();
+  const { venues, isLoading, error } = useVenueList();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#005E2E] to-[#29721D]">
@@ -38,11 +38,21 @@ export function BookingPage() {
       </div>
 
       <main className="mx-auto max-w-[1280px] px-6 py-6">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {venues.map((venue) => (
-            <VenueCard key={venue.id} data={venue} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-20 text-white font-medium">
+            Đang tải danh sách sân...
+          </div>
+        ) : error ? (
+          <div className="flex justify-center py-20 text-rose-200 font-medium">
+            Lỗi: {error}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {venues.map((venue) => (
+              <VenueCard key={venue.id} data={venue} />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
