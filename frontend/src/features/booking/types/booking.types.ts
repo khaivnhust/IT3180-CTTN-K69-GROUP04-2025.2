@@ -39,7 +39,7 @@ export type PitchPhysicalStatus = "active" | "maintenance" | "disabled";
 export interface CreateBookingRequest {
   pitchId: number;
   bookingDate: string; // YYYY-MM-DD
-  slotNumber: number;
+  timeSlotId: number;
 }
 
 export interface PlayerBookingResponse {

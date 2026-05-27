@@ -1,5 +1,8 @@
 import apiClient from "@/shared/api/apiClient";
-import type { VenueAvailabilityResponse } from "@/features/venue/types/venue.types";
+import type {
+  VenueAvailabilityResponse,
+  VenueResponseDTO,
+} from "@/features/venue/types/venue.types";
 
 export interface SpringPageResponse<T> {
   content: T[];
@@ -16,7 +19,7 @@ export interface FieldDto {
 }
 
 /**
- * Lấy danh sách tất cả các sân bóng
+ * Lấy danh sách tất cả các sân bóng (dành cho Admin)
  */
 export const getFields = async (): Promise<FieldDto[]> => {
   try {
@@ -24,6 +27,19 @@ export const getFields = async (): Promise<FieldDto[]> => {
     return response.data.content;
   } catch (error) {
     console.error("Error fetching fields:", error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách các sân bóng đang hoạt động (dành cho Player)
+ */
+export const getVenues = async (): Promise<VenueResponseDTO[]> => {
+  try {
+    const response = await apiClient.get<SpringPageResponse<VenueResponseDTO>>("/player/venues");
+    return response.data.content;
+  } catch (error) {
+    console.error("Error fetching active venues:", error);
     throw error;
   }
 };

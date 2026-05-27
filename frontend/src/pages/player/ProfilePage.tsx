@@ -5,6 +5,7 @@ import {
   PlayerSystemLinks,
   usePlayerProfile,
 } from "../../features/account";
+import type { PlayerBookingHistoryItem } from "../../features/account/types/account.types";
 import { PlayerNavBar } from "../../layouts/player/PlayerNavBar";
 import { useState, useEffect, useCallback } from "react";
 import { getPlayerBookings } from "../../features/account/api/account.api";
@@ -15,7 +16,7 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<PlayerBookingHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
