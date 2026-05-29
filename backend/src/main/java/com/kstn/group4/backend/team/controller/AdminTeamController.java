@@ -31,9 +31,39 @@ public class AdminTeamController {
 
     @PutMapping("/{id}/status")
     public ResponseEntity<TeamResponse> updateTeamStatus(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @Valid @RequestBody TeamStatusUpdateRequest request
     ) {
         return ResponseEntity.ok(teamService.updateTeamStatus(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
+        teamService.deleteTeam(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/reputation/add")
+    public ResponseEntity<TeamResponse> addReputation(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "5") Integer amount
+    ) {
+        return ResponseEntity.ok(teamService.addReputation(id, amount));
+    }
+
+    @PutMapping("/{id}/reputation/deduct")
+    public ResponseEntity<TeamResponse> deductReputation(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "5") Integer amount
+    ) {
+        return ResponseEntity.ok(teamService.deductReputation(id, amount));
+    }
+
+    @PutMapping("/{id}/ban")
+    public ResponseEntity<TeamResponse> banTeam(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "7") Integer days
+    ) {
+        return ResponseEntity.ok(teamService.banTeam(id, days));
     }
 }

@@ -92,6 +92,21 @@ public class MatchService {
         return mapToResponse(match);
     }
 
+    @Transactional(readOnly = true)
+    public List<MatchResponse> getAllMatchesForAdmin() {
+        return matchRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteMatch(Integer id) {
+        if (!matchRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Không tìm thấy trận đấu với ID: " + id, "Match");
+        }
+        matchRepository.deleteById(id);
+    }
+
     private MatchResponse mapToResponse(Match match) {
         return new MatchResponse(
                 match.getId(),

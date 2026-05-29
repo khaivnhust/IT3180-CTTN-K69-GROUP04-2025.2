@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `password` VARCHAR(255),
     `role` VARCHAR(255),
     `created_at` DATETIME,
-    `team_id` INT,
+    `team_id` BIGINT,
     `phone_number` VARCHAR(20),
     `avatar_url` VARCHAR(255),
     PRIMARY KEY (`id`)
@@ -143,12 +143,13 @@ CREATE TABLE IF NOT EXISTS `booking_payments` (
 );
 
 CREATE TABLE IF NOT EXISTS `teams` (
-    `id` INT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(255) NOT NULL,
     `captain_id` INT NOT NULL,
     `description` TEXT,
     `reputation_score` INT DEFAULT 100,
     `status` VARCHAR(50) NOT NULL,
+    `banned_until` DATETIME DEFAULT NULL,
     `created_at` DATETIME NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_teams_captain_id`
@@ -156,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `teams` (
 );
 
 CREATE TABLE IF NOT EXISTS `team_members` (
-    `team_id` INT NOT NULL,
+    `team_id` BIGINT NOT NULL,
     `user_email` VARCHAR(255) NOT NULL,
     `status` VARCHAR(50) NOT NULL,
     PRIMARY KEY (`team_id`, `user_email`),
@@ -167,8 +168,8 @@ CREATE TABLE IF NOT EXISTS `team_members` (
 CREATE TABLE IF NOT EXISTS `matches` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `venue_id` INT NOT NULL,
-    `host_team_id` INT NOT NULL,
-    `guest_team_id` INT,
+    `host_team_id` BIGINT NOT NULL,
+    `guest_team_id` BIGINT,
     `skill_level` VARCHAR(50) NOT NULL,
     `match_time` DATETIME NOT NULL,
     `status` VARCHAR(50) NOT NULL,

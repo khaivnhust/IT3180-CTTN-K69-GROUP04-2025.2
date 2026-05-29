@@ -16,9 +16,9 @@ public class MatchResponse {
     private Integer id;
     private Integer venueId;
     private String venueName;
-    private Integer hostTeamId;
+    private Long hostTeamId;
     private String hostTeamName;
-    private Integer guestTeamId;
+    private Long guestTeamId;
     private String guestTeamName;
     private MatchSkillLevel skillLevel;
     private LocalDateTime matchTime;

@@ -50,3 +50,48 @@ export const createTeam = async (data: {
     throw error;
   }
 };
+
+export const deleteTeam = async (teamId: number): Promise<void> => {
+  try {
+    await apiClient.delete(`/admin/teams/${teamId}`);
+  } catch (error) {
+    logApiError("deleteTeam", error, { teamId });
+    throw error;
+  }
+};
+
+export const addReputation = async (teamId: number, amount: number): Promise<Team> => {
+  try {
+    const response = await apiClient.put<Team>(`/admin/teams/${teamId}/reputation/add`, null, {
+      params: { amount }
+    });
+    return response.data;
+  } catch (error) {
+    logApiError("addReputation", error, { teamId, amount });
+    throw error;
+  }
+};
+
+export const deductReputation = async (teamId: number, amount: number): Promise<Team> => {
+  try {
+    const response = await apiClient.put<Team>(`/admin/teams/${teamId}/reputation/deduct`, null, {
+      params: { amount }
+    });
+    return response.data;
+  } catch (error) {
+    logApiError("deductReputation", error, { teamId, amount });
+    throw error;
+  }
+};
+
+export const banTeam = async (teamId: number, days: number): Promise<Team> => {
+  try {
+    const response = await apiClient.put<Team>(`/admin/teams/${teamId}/ban`, null, {
+      params: { days }
+    });
+    return response.data;
+  } catch (error) {
+    logApiError("banTeam", error, { teamId, days });
+    throw error;
+  }
+};

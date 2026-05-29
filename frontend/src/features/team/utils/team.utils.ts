@@ -20,6 +20,13 @@ export const getStatusMeta = (
     };
   }
 
+  if (status === "BANNED") {
+    return {
+      label: "Bị cấm",
+      className: "border border-rose-100/80 bg-rose-500/35 text-rose-200",
+    };
+  }
+
   return {
     label: "Từ chối",
     className: "border border-rose-100/80 bg-rose-400/35 text-rose-50",

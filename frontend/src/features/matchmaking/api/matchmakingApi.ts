@@ -46,3 +46,22 @@ export const joinMatch = async (matchId: number): Promise<MatchResponse> => {
     throw error;
   }
 };
+
+export const getAdminAllMatches = async (): Promise<MatchResponse[]> => {
+  try {
+    const response = await apiClient.get<MatchResponse[]>("/admin/matches");
+    return response.data;
+  } catch (error) {
+    logApiError("getAdminAllMatches", error);
+    throw error;
+  }
+};
+
+export const deleteMatch = async (matchId: number): Promise<void> => {
+  try {
+    await apiClient.delete(`/admin/matches/${matchId}`);
+  } catch (error) {
+    logApiError("deleteMatch", error, { matchId });
+    throw error;
+  }
+};

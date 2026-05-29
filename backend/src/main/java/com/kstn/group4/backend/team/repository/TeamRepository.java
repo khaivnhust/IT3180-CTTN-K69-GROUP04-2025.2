@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TeamRepository extends JpaRepository<Team, Integer> {
+public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findByStatus(TeamStatus status);
     Optional<Team> findByCaptainId(Integer captainId);
     boolean existsByName(String name);

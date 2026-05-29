@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import type { Team } from "../types/team.types";
-import { getAllTeams, getPendingTeams, updateTeamStatus } from "../api/teamApi";
+import { getAllTeams, getPendingTeams, updateTeamStatus, deleteTeam, addReputation, deductReputation, banTeam } from "../api/teamApi";
+import { toast } from "../../../shared/utils/toast";
 
 export function useTeamManagement() {
   const [allTeams, setAllTeams] = useState<Team[]>([]);
@@ -108,6 +109,54 @@ export function useTeamManagement() {
     }
   };
 
+  const handleDeleteTeam = async (teamId: number) => {
+    try {
+      await deleteTeam(teamId);
+      toast.success("Xóa đội bóng thành công!");
+      closeModal();
+      fetchTeams();
+    } catch (error) {
+      console.error(error);
+      toast.error("Xóa đội bóng thất bại.");
+    }
+  };
+
+  const handleAddReputation = async (teamId: number, amount: number) => {
+    try {
+      const updated = await addReputation(teamId, amount);
+      toast.success(`Đã cộng ${amount} điểm uy tín cho đội bóng!`);
+      setAllTeams((current) => current.map((t) => (t.id === teamId ? updated : t)));
+      setPendingTeams((current) => current.map((t) => (t.id === teamId ? updated : t)));
+    } catch (error) {
+      console.error(error);
+      toast.error("Cộng điểm uy tín thất bại.");
+    }
+  };
+
+  const handleDeductReputation = async (teamId: number, amount: number) => {
+    try {
+      const updated = await deductReputation(teamId, amount);
+      toast.success(`Đã trừ ${amount} điểm uy tín của đội bóng!`);
+      setAllTeams((current) => current.map((t) => (t.id === teamId ? updated : t)));
+      setPendingTeams((current) => current.map((t) => (t.id === teamId ? updated : t)));
+    } catch (error) {
+      console.error(error);
+      toast.error("Trừ điểm uy tín thất bại.");
+    }
+  };
+
+  const handleBanTeam = async (teamId: number, days: number) => {
+    try {
+      const updated = await banTeam(teamId, days);
+      toast.success(`Đã cấm đội bóng thi đấu trong ${days} ngày!`);
+      setAllTeams((current) => current.map((t) => (t.id === teamId ? updated : t)));
+      setPendingTeams((current) => current.map((t) => (t.id === teamId ? updated : t)));
+    } catch (error) {
+      console.error(error);
+      toast.error("Cấm đội bóng thất bại.");
+    }
+  };
+
   return {
     sortedTeams,
     selectedTeam,
@@ -119,6 +168,10 @@ export function useTeamManagement() {
     closeModal,
     handleApproveTeam,
     handleRejectTeam,
+    handleDeleteTeam,
+    handleAddReputation,
+    handleDeductReputation,
+    handleBanTeam,
     refetch: fetchTeams,
   };
 }

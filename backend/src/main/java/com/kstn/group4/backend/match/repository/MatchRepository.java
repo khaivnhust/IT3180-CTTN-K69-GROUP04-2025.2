@@ -32,4 +32,7 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
     Optional<Match> findByIdForUpdate(@Param("id") Integer id);
 
     List<Match> findByStatus(MatchStatus status);
+
+    @Query("SELECT m FROM Match m WHERE m.hostTeam.id = :teamId OR m.guestTeam.id = :teamId")
+    List<Match> findByHostOrGuestTeamId(@Param("teamId") Long teamId);
 }

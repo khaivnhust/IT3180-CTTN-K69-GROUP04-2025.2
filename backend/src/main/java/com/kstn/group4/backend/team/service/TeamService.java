@@ -14,10 +14,13 @@ import com.kstn.group4.backend.team.repository.TeamMemberRepository;
 import com.kstn.group4.backend.team.repository.TeamRepository;
 import com.kstn.group4.backend.user.entity.User;
 import com.kstn.group4.backend.user.repository.UserRepository;
+import com.kstn.group4.backend.match.repository.MatchRepository;
+import com.kstn.group4.backend.match.entity.Match;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +32,7 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
+    private final MatchRepository matchRepository;
 
     @Transactional
     public TeamResponse createTeam(UserPrincipal userPrincipal, CreateTeamRequest request) {
@@ -77,6 +81,7 @@ public class TeamService {
                 team.getDescription(),
                 team.getReputationScore(),
                 team.getStatus(),
+                null,
                 team.getCreatedAt(),
                 emails
         );
@@ -97,7 +102,7 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamResponse updateTeamStatus(Integer teamId, TeamStatusUpdateRequest request) {
+    public TeamResponse updateTeamStatus(Long teamId, TeamStatusUpdateRequest request) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
 
@@ -110,6 +115,59 @@ public class TeamService {
             userRepository.save(captain);
         }
 
+        return mapToResponse(team);
+    }
+
+    @Transactional
+    public void deleteTeam(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
+
+        // 1. Delete or clear matches associated with this team
+        List<Match> matches = matchRepository.findByHostOrGuestTeamId(teamId);
+        if (!matches.isEmpty()) {
+            matchRepository.deleteAll(matches);
+        }
+
+        // 2. Clear team_id for all users belonging to this team
+        List<User> members = userRepository.findByTeamId(teamId);
+        for (User u : members) {
+            u.setTeamId(null);
+            userRepository.save(u);
+        }
+
+        // 3. Delete team members
+        teamMemberRepository.deleteByTeamId(teamId);
+
+        // 4. Delete team
+        teamRepository.delete(team);
+    }
+
+    @Transactional
+    public TeamResponse addReputation(Long teamId, Integer amount) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
+        team.setReputationScore(team.getReputationScore() + amount);
+        teamRepository.save(team);
+        return mapToResponse(team);
+    }
+
+    @Transactional
+    public TeamResponse deductReputation(Long teamId, Integer amount) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
+        team.setReputationScore(Math.max(0, team.getReputationScore() - amount));
+        teamRepository.save(team);
+        return mapToResponse(team);
+    }
+
+    @Transactional
+    public TeamResponse banTeam(Long teamId, Integer days) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
+        team.setStatus(TeamStatus.BANNED);
+        team.setBannedUntil(LocalDateTime.now().plusDays(days));
+        teamRepository.save(team);
         return mapToResponse(team);
     }
 
@@ -127,6 +185,7 @@ public class TeamService {
                 team.getDescription(),
                 team.getReputationScore(),
                 team.getStatus(),
+                team.getBannedUntil(),
                 team.getCreatedAt(),
                 memberEmails
         );

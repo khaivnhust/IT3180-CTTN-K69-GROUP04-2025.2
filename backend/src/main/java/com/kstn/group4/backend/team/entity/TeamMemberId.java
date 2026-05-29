@@ -13,7 +13,7 @@ import lombok.Setter;
 public class TeamMemberId implements Serializable {
 
     @Column(name = "team_id")
-    private Integer teamId;
+    private Long teamId;
 
     @Column(name = "user_email")
     private String userEmail;
@@ -21,7 +21,7 @@ public class TeamMemberId implements Serializable {
     public TeamMemberId() {
     }
 
-    public TeamMemberId(Integer teamId, String userEmail) {
+    public TeamMemberId(Long teamId, String userEmail) {
         this.teamId = teamId;
         this.userEmail = userEmail;
     }

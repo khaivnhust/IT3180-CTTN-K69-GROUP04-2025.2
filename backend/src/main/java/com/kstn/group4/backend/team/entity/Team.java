@@ -15,7 +15,7 @@ public class Team {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(nullable = false)
     private String name;
@@ -34,6 +34,9 @@ public class Team {
     @Column(nullable = false)
     private TeamStatus status;
 
+    @Column(name = "banned_until")
+    private LocalDateTime bannedUntil;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -41,5 +44,6 @@ public class Team {
         this.createdAt = LocalDateTime.now();
         this.reputationScore = 100;
         this.status = TeamStatus.PENDING;
+        this.bannedUntil = null;
     }
 }

@@ -16,6 +16,10 @@ export function TeamsPage() {
     closeModal,
     handleApproveTeam,
     handleRejectTeam,
+    handleDeleteTeam,
+    handleAddReputation,
+    handleDeductReputation,
+    handleBanTeam,
   } = useTeamManagement();
 
   return (
@@ -73,6 +77,10 @@ export function TeamsPage() {
         team={selectedTeam}
         isOpen={isOpen}
         onClose={closeModal}
+        onDeleteTeam={handleDeleteTeam}
+        onAddReputation={handleAddReputation}
+        onDeductReputation={handleDeductReputation}
+        onBanTeam={handleBanTeam}
       />
     </section>
   );

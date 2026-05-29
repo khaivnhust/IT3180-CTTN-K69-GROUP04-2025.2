@@ -13,13 +13,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamResponse {
-    private Integer id;
+    private Long id;
     private String name;
     private Integer captainId;
     private String captainName;
     private String description;
     private Integer reputationScore;
     private TeamStatus status;
+    private LocalDateTime bannedUntil;
     private LocalDateTime createdAt;
     private List<String> memberEmails;
 }

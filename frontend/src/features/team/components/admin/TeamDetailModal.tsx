@@ -1,5 +1,4 @@
-import { Shield, Users, X } from "lucide-react";
-
+import { Shield, Users, X, Trash2, ArrowUp, ArrowDown, Ban } from "lucide-react";
 import type { Team } from "../../types/team.types";
 import { getReputationTone, getStatusMeta } from "../../utils/team.utils";
 
@@ -7,18 +6,43 @@ interface TeamDetailModalProps {
   team: Team | null;
   isOpen: boolean;
   onClose: () => void;
+  onDeleteTeam?: (teamId: number) => void;
+  onAddReputation?: (teamId: number, amount: number) => void;
+  onDeductReputation?: (teamId: number, amount: number) => void;
+  onBanTeam?: (teamId: number, days: number) => void;
 }
 
 export function TeamDetailModal({
   team,
   isOpen,
   onClose,
+  onDeleteTeam,
+  onAddReputation,
+  onDeductReputation,
+  onBanTeam,
 }: TeamDetailModalProps) {
   if (!isOpen || !team) {
     return null;
   }
 
   const logoLetter = team.name.charAt(0).toUpperCase();
+
+  const handleBan = () => {
+    const input = window.prompt("Nhập số ngày muốn cấm đội (ví dụ: 7):", "7");
+    if (input === null) return;
+    const days = parseInt(input, 10);
+    if (isNaN(days) || days <= 0) {
+      alert("Số ngày không hợp lệ!");
+      return;
+    }
+    onBanTeam?.(team.id, days);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`Bạn có chắc chắn muốn XÓA đội bóng "${team.name}"? Tất cả trận đấu liên quan sẽ bị xóa.`)) {
+      onDeleteTeam?.(team.id);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8">
@@ -62,10 +86,20 @@ export function TeamDetailModal({
               <p className="mt-2 text-base font-semibold text-white">
                 {team.captainName}
               </p>
-              <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-white/80">
-                <Shield size={14} />
-                Trạng thái đội: {getStatusMeta(team.status).label}
-              </p>
+              <div className="mt-2 space-y-1">
+                <p className="inline-flex items-center gap-1.5 text-sm text-white/80">
+                  <Shield size={14} />
+                  Trạng thái đội:{" "}
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getStatusMeta(team.status).className}`}>
+                    {getStatusMeta(team.status).label}
+                  </span>
+                </p>
+                {team.status === "BANNED" && team.bannedUntil && (
+                  <p className="text-xs text-rose-300 font-medium pl-5">
+                    Cấm thi đấu đến: {new Date(team.bannedUntil).toLocaleString("vi-VN")}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="rounded-xl border border-white/15 bg-[#0a4d29]/70 p-4">
@@ -123,11 +157,58 @@ export function TeamDetailModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-white/15 px-6 py-4">
+        {/* Admin actions container in footer */}
+        <div className="flex flex-col gap-3 border-t border-white/15 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {onAddReputation && (
+              <button
+                type="button"
+                onClick={() => onAddReputation(team.id, 5)}
+                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+              >
+                <ArrowUp size={12} />
+                +5 Uy tín
+              </button>
+            )}
+
+            {onDeductReputation && (
+              <button
+                type="button"
+                onClick={() => onDeductReputation(team.id, 5)}
+                className="inline-flex items-center gap-1 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700 active:scale-95"
+              >
+                <ArrowDown size={12} />
+                -5 Uy tín
+              </button>
+            )}
+
+            {onBanTeam && team.status !== "BANNED" && (
+              <button
+                type="button"
+                onClick={handleBan}
+                className="inline-flex items-center gap-1 rounded-lg bg-orange-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-700 active:scale-95"
+              >
+                <Ban size={12} />
+                Cấm đội
+              </button>
+            )}
+
+            {onDeleteTeam && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700 active:scale-95"
+              >
+                <Trash2 size={12} />
+                Xoá đội
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/15"
+            className="self-end rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/15 active:scale-95"
           >
             Đóng
           </button>
