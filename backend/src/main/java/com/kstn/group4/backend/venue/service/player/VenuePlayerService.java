@@ -82,7 +82,7 @@ public class VenuePlayerService {
         Pitch pitch = pitchRepository.findById(pitchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sân với ID: " + pitchId, "Pitch"));
 
-        List<TimeSlot> timeSlots = timeSlotRepository.findByPitchIdOrderBySlotNumberAsc(pitchId);
+        List<TimeSlot> timeSlots = timeSlotRepository.findAllActiveOrderBySlotNumberAsc();
         List<Booking> bookings = bookingRepository.findConfirmedByPitchIdAndBookingDate(pitchId, date);
         List<PriceRule> priceRules = pitch.getPriceRules() == null ? List.of() : pitch.getPriceRules();
 
@@ -146,7 +146,7 @@ public class VenuePlayerService {
      */
     private List<SlotStatus> buildSlotStatuses(Pitch pitch, Map<Integer, Booking> slotBookingMap, boolean weekend) {
         List<PriceRule> priceRules = pitch.getPriceRules() == null ? List.of() : pitch.getPriceRules();
-        List<TimeSlot> timeSlots = pitch.getTimeSlots() == null ? List.of() : pitch.getTimeSlots();
+        List<TimeSlot> timeSlots = timeSlotRepository.findAllActiveOrderBySlotNumberAsc();
 
         return timeSlots.stream()
                 .filter(timeSlot -> timeSlot.getIsActive() == null || timeSlot.getIsActive())

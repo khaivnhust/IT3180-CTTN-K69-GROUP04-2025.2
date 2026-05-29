@@ -1,3 +1,13 @@
+DROP TABLE IF EXISTS `booking_payments`;
+DROP TABLE IF EXISTS `pitch_reviews`;
+DROP TABLE IF EXISTS `bookings`;
+DROP TABLE IF EXISTS `services`;
+DROP TABLE IF EXISTS `price_rules`;
+DROP TABLE IF EXISTS `time_slots`;
+DROP TABLE IF EXISTS `pitches`;
+DROP TABLE IF EXISTS `venues`;
+DROP TABLE IF EXISTS `users`;
+
 CREATE TABLE IF NOT EXISTS `users` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(255) NOT NULL,
@@ -37,18 +47,19 @@ CREATE TABLE IF NOT EXISTS `pitches` (
         FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`)
 );
 
+-- ============================================================
+-- TIME_SLOTS: Master Data — chỉ 11 dòng duy nhất cho toàn hệ thống
+-- Không có pitch_id. Mỗi dòng là 1 khung giờ 90 phút cố định.
+-- ============================================================
 CREATE TABLE IF NOT EXISTS `time_slots` (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `pitch_id` INT NOT NULL,
     `slot_number` INT NOT NULL,
     `start_time` TIME NOT NULL,
     `end_time` TIME NOT NULL,
     `is_active` BIT(1) NOT NULL DEFAULT 1,
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_time_slots_pitch_id`
-        FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `uk_time_slots_pitch_slot`
-        UNIQUE (`pitch_id`, `slot_number`)
+    CONSTRAINT `uk_time_slots_slot_number`
+        UNIQUE (`slot_number`)
 );
 
 CREATE TABLE IF NOT EXISTS `price_rules` (
@@ -94,8 +105,8 @@ CREATE TABLE IF NOT EXISTS `bookings` (
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
     CONSTRAINT `fk_bookings_time_slot_id`
         FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`),
-    CONSTRAINT `uk_bookings_date_slot`
-        UNIQUE (`booking_date`, `time_slot_id`)
+    CONSTRAINT `uk_bookings_date_pitch_slot`
+        UNIQUE (`booking_date`, `pitch_id`, `time_slot_id`)
 );
 
 CREATE TABLE IF NOT EXISTS `pitch_reviews` (
