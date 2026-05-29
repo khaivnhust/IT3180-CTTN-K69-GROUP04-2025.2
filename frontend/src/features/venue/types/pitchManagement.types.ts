@@ -15,8 +15,8 @@ export interface PitchManagementFormData {
 export interface VenueFormData {
   venueName: string;
   venueAddress: string;
-  venueDescription: string;
-  imageFile: File | null;
+  venueDescription?: string;
+  imageFile?: File | null;
 }
 
 export interface PitchManagementTabProps {

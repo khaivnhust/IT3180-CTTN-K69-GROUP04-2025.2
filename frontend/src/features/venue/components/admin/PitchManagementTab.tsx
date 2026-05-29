@@ -15,7 +15,6 @@ import {
   updateVenue,
   getFields,
 } from "../../api/venueApi";
-import type { PitchManagementTabProps } from "../../types/pitchManagement.types";
 import type { PitchDetailResponse, Facility } from "../../types/venue.types";
 import {
   pitchTypeToBackend,
@@ -29,7 +28,7 @@ const fieldClass =
   "w-full rounded-lg border border-green-500 bg-[#29721d]/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-green-200 focus:border-transparent focus:ring-2 focus:ring-green-400";
 const errorTextClass = "text-sm text-red-300";
 
-export function PitchManagementTab({ facilityName }: PitchManagementTabProps) {
+export function PitchManagementTab() {
   const { facilities, selectedVenueId, setSelectedVenueId } = useVenueContext();
   const [pitches, setPitches] = useState<PitchDetailResponse[]>([]);
   const [isLoadingPitches, setIsLoadingPitches] = useState(false);
