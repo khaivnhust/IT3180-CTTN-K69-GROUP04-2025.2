@@ -32,11 +32,12 @@ export function MatchPage() {
   }, [userInfo]);
 
   useEffect(() => {
+    refetchProfile();
     fetchMatches();
     getVenues()
       .then((data) => setVenues(data))
       .catch((err) => console.error("Lỗi khi tải danh sách khu sân:", err));
-  }, [fetchMatches]);
+  }, [fetchMatches, refetchProfile]);
 
   const handleVenueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;

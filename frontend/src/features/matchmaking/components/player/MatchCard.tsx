@@ -43,11 +43,6 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
 
   const handleJoin = async () => {
     // Đã bỏ chặn ngầm tại Frontend để luồng MatchRequest xử lý ở Backend
-    if (!userTeamId) {
-      alert("Bạn chưa tham gia đội bóng nào để nhận kèo.");
-      return;
-    }
-
     if (userTeamId === match.hostTeamId) {
       alert("Bạn không thể tự nhận kèo của chính đội mình.");
       return;
@@ -56,7 +51,7 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
     setIsJoining(true);
     try {
       // Optimistic update: use temporary team name
-      await joinMatchAction(match.id, userTeamId, "Đội của bạn");
+      await joinMatchAction(match.id, userTeamId!, "Đội của bạn");
     } catch (error) {
       console.error(error);
       const axiosError = error as { response?: { data?: { message?: string } } };

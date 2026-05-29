@@ -66,11 +66,15 @@ public class TeamService {
             for (String email : request.getMemberEmails()) {
                 if (email != null && !email.trim().isEmpty() && !email.equalsIgnoreCase(captain.getEmail())) {
                     String trimmedEmail = email.trim();
-                    members.add(new TeamMember(savedTeam, trimmedEmail, TeamMemberStatus.INVITED));
-                    userRepository.findByEmail(trimmedEmail).ifPresent(u -> {
-                        u.setTeamId(savedTeam.getId());
-                        userRepository.save(u);
-                    });
+                    var userOpt = userRepository.findByEmail(trimmedEmail);
+                    if (userOpt.isPresent()) {
+                        User existingUser = userOpt.get();
+                        members.add(new TeamMember(savedTeam, trimmedEmail, TeamMemberStatus.INVITED));
+                        existingUser.setTeamId(savedTeam.getId());
+                        userRepository.save(existingUser);
+                    } else {
+                        members.add(new TeamMember(savedTeam, trimmedEmail, TeamMemberStatus.INVITED));
+                    }
                 }
             }
         }
