@@ -1,9 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  useEffect,
   useState,
   type ChangeEvent,
   type DragEvent,
+  useEffect,
 } from "react";
 import { useForm } from "react-hook-form";
 
@@ -41,9 +41,18 @@ export function useVenueForm({ mode, existingVenue }: UseVenueFormOptions) {
     mode: "onBlur",
   });
 
-  // Reset form khi mode hoặc existingVenue thay đổi
-  useEffect(() => {
-    if (mode === "CREATE") {
+  /**
+   * Dedicated function to reset the venue form state.
+   * Can be called manually from event handlers or conditionally on prop changes.
+   */
+  const resetVenueForm = (
+    targetMode?: "CREATE" | "EDIT" | null,
+    targetVenue?: UseVenueFormOptions["existingVenue"]
+  ) => {
+    const activeMode = targetMode !== undefined ? targetMode : mode;
+    const venue = targetVenue !== undefined ? targetVenue : existingVenue;
+
+    if (activeMode === "CREATE") {
       reset({
         venueName: "",
         venueAddress: "",
@@ -52,20 +61,38 @@ export function useVenueForm({ mode, existingVenue }: UseVenueFormOptions) {
       });
       setPreviewUrl(null);
       setPreviewName("");
-    } else if (mode === "EDIT" && existingVenue) {
+    } else if (activeMode === "EDIT" && venue) {
       reset({
-        venueName: existingVenue.name,
-        venueAddress: existingVenue.address,
+        venueName: venue.name,
+        venueAddress: venue.address,
         venueDescription: "",
         imageFile: null,
       });
-      // Hiển thị ảnh cũ từ server
-      setPreviewUrl(existingVenue.imageUrl);
+      setPreviewUrl(venue.imageUrl);
+      setPreviewName("");
+    } else {
+      reset({
+        venueName: "",
+        venueAddress: "",
+        venueDescription: "",
+        imageFile: null,
+      });
+      setPreviewUrl(null);
       setPreviewName("");
     }
-  }, [mode, existingVenue, reset]);
+  };
 
-  // Cleanup object URL khi component unmount
+  // Sync state during render when mode or existingVenue changes (official React alternative to useEffect)
+  const [prevMode, setPrevMode] = useState<"CREATE" | "EDIT" | null>(mode);
+  const [prevVenue, setPrevVenue] = useState<UseVenueFormOptions["existingVenue"]>(existingVenue);
+
+  if (mode !== prevMode || existingVenue !== prevVenue) {
+    setPrevMode(mode);
+    setPrevVenue(existingVenue);
+    resetVenueForm(mode, existingVenue);
+  }
+
+  // Cleanup object URL when component unmounts
   useEffect(() => {
     return () => {
       if (previewUrl && previewUrl.startsWith("blob:")) {
@@ -76,7 +103,6 @@ export function useVenueForm({ mode, existingVenue }: UseVenueFormOptions) {
 
   const updatePreviewFromFile = (file: File | null) => {
     if (!file) {
-      // Nếu đang edit, giữ ảnh cũ từ server
       if (mode === "EDIT" && existingVenue?.imageUrl) {
         setPreviewUrl(existingVenue.imageUrl);
       } else {
@@ -86,7 +112,6 @@ export function useVenueForm({ mode, existingVenue }: UseVenueFormOptions) {
       return;
     }
 
-    // Revoke blob URL cũ nếu có
     if (previewUrl && previewUrl.startsWith("blob:")) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -134,5 +159,6 @@ export function useVenueForm({ mode, existingVenue }: UseVenueFormOptions) {
     setIsDragActive,
     previewUrl,
     previewName,
+    resetVenueForm,
   };
 }
