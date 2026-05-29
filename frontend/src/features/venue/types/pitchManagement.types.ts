@@ -7,14 +7,16 @@ export interface PitchManagementSlotPrice {
 }
 
 export interface PitchManagementFormData {
-  selectedArea: string;
-  newAreaName?: string;
-  newAreaAddress?: string;
   pitchName: string;
   pitchType: PitchTypeOption;
-  description: string;
-  imageFile?: File | null;
   slotPrices: PitchManagementSlotPrice[];
+}
+
+export interface VenueFormData {
+  venueName: string;
+  venueAddress: string;
+  venueDescription: string;
+  imageFile: File | null;
 }
 
 export interface PitchManagementTabProps {

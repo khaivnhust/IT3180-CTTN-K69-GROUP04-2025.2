@@ -15,6 +15,8 @@ public interface PitchRepository extends JpaRepository<Pitch, Integer> {
 
     List<Pitch> findByVenueId(Integer venueId);
 
+    Page<Pitch> findByVenueId(Integer venueId, Pageable pageable);
+
         Page<Pitch> findByVenueIdAndVenueManagerId(Integer venueId, Integer managerId, Pageable pageable);
 
         Optional<Pitch> findByIdAndVenueManagerId(Integer id, Integer managerId);
