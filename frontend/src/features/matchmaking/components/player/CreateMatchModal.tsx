@@ -11,12 +11,28 @@ interface CreateMatchModalProps {
   onSuccess: () => void;
 }
 
+const TIME_SLOTS = [
+  { id: 1, label: "Ca 1 (06:30 - 08:00)" },
+  { id: 2, label: "Ca 2 (08:00 - 09:30)" },
+  { id: 3, label: "Ca 3 (09:30 - 11:00)" },
+  { id: 4, label: "Ca 4 (11:00 - 12:30)" },
+  { id: 5, label: "Ca 5 (12:30 - 14:00)" },
+  { id: 6, label: "Ca 6 (14:00 - 15:30)" },
+  { id: 7, label: "Ca 7 (15:30 - 17:00)" },
+  { id: 8, label: "Ca 8 (17:00 - 18:30)" },
+  { id: 9, label: "Ca 9 (18:30 - 20:00)" },
+  { id: 10, label: "Ca 10 (20:00 - 21:30)" },
+  { id: 11, label: "Ca 11 (21:30 - 23:00)" },
+];
+
 export function CreateMatchModal({ onClose, onSuccess }: CreateMatchModalProps) {
   const createNewMatch = useMatchStore((state) => state.createNewMatch);
   const [venues, setVenues] = useState<VenueResponseDTO[]>([]);
   const [venueId, setVenueId] = useState<string>("");
   const [skillLevel, setSkillLevel] = useState<MatchSkillLevel>("AVERAGE");
-  const [matchTime, setMatchTime] = useState("");
+  const [matchDate, setMatchDate] = useState("");
+  const [timeSlotId, setTimeSlotId] = useState("1");
+  const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,30 +55,36 @@ export function CreateMatchModal({ onClose, onSuccess }: CreateMatchModalProps) 
       setError("Vui lòng chọn khu sân.");
       return;
     }
-    if (!matchTime) {
-      setError("Vui lòng chọn thời gian thi đấu.");
+    if (!matchDate) {
+      setError("Vui lòng chọn ngày thi đấu.");
+      return;
+    }
+    if (!timeSlotId) {
+      setError("Vui lòng chọn ca thi đấu.");
       return;
     }
 
-    // Clean formatting to prevent timezone shift (send local ISO format)
-    const selectedDate = new Date(matchTime);
-    
-    // Check if less than 12 hours from now
+    const selectedSlot = TIME_SLOTS.find((s) => s.id === parseInt(timeSlotId));
+    if (!selectedSlot) {
+      setError("Ca thi đấu không hợp lệ.");
+      return;
+    }
+
+    const startTimeStr = selectedSlot.label.match(/\((\d{2}:\d{2})/)?.[1] || "06:30";
+    const selectedDateTime = new Date(`${matchDate}T${startTimeStr}:00`);
+
     const now = new Date();
     const minTime = new Date(now.getTime() + 12 * 60 * 60 * 1000);
-    if (selectedDate.getTime() < minTime.getTime()) {
+    if (selectedDateTime.getTime() < minTime.getTime()) {
       setError("Thời gian thi đấu phải sau thời điểm hiện tại ít nhất 12 tiếng.");
       return;
     }
-
-    // Format clean local date string (e.g. yyyy-MM-ddTHH:mm:ss)
-    const formattedTime = format(selectedDate, "yyyy-MM-dd'T'HH:mm:ss");
 
     setSubmitting(true);
     setError(null);
 
     try {
-      await createNewMatch(parseInt(venueId), skillLevel, formattedTime);
+      await createNewMatch(parseInt(venueId), skillLevel, parseInt(timeSlotId), matchDate, description);
       alert("Đăng ký tạo kèo thành công!");
       onSuccess();
     } catch (err) {
@@ -74,6 +96,8 @@ export function CreateMatchModal({ onClose, onSuccess }: CreateMatchModalProps) 
       setSubmitting(false);
     }
   };
+
+  const todayStr = format(new Date(), "yyyy-MM-dd");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8">
@@ -140,16 +164,50 @@ export function CreateMatchModal({ onClose, onSuccess }: CreateMatchModalProps) 
             </select>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">
+                Ngày thi đấu
+              </label>
+              <input
+                type="date"
+                required
+                min={todayStr}
+                value={matchDate}
+                onChange={(e) => setMatchDate(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-[#032e1a] px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">
+                Chọn ca đá (Time Slot)
+              </label>
+              <select
+                required
+                value={timeSlotId}
+                onChange={(e) => setTimeSlotId(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-[#032e1a] px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+              >
+                {TIME_SLOTS.map((slot) => (
+                  <option key={slot.id} value={slot.id}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-white/70 mb-1.5">
-              Thời gian thi đấu (Ít nhất sau 12h)
+              Mô tả chi tiết
             </label>
-            <input
-              type="datetime-local"
-              required
-              value={matchTime}
-              onChange={(e) => setMatchTime(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-[#032e1a] px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+            <textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Nhập ghi chú, mô tả chi tiết trận đấu..."
+              className="w-full rounded-xl border border-white/15 bg-[#032e1a] px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none placeholder:text-white/30 resize-none"
             />
           </div>
 

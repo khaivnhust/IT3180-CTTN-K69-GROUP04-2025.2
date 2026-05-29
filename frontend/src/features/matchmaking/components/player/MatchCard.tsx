@@ -42,8 +42,9 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
   };
 
   const handleJoin = async () => {
+    // Đã bỏ chặn ngầm tại Frontend để luồng MatchRequest xử lý ở Backend
     if (!userTeamId) {
-      alert("Bạn phải là Đội trưởng của một đội bóng đã được duyệt mới có thể nhận kèo.");
+      alert("Bạn chưa tham gia đội bóng nào để nhận kèo.");
       return;
     }
 

@@ -23,4 +23,5 @@ public class MatchResponse {
     private MatchSkillLevel skillLevel;
     private LocalDateTime matchTime;
     private MatchStatus status;
+    private String description;
 }

@@ -2,7 +2,7 @@ package com.kstn.group4.backend.match.dto;
 
 import com.kstn.group4.backend.match.enums.MatchSkillLevel;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +16,11 @@ public class CreateMatchRequest {
     @NotNull(message = "Trình độ yêu cầu không được để trống")
     private MatchSkillLevel skillLevel;
 
-    @NotNull(message = "Thời gian thi đấu không được để trống")
-    private LocalDateTime matchTime;
+    @NotNull(message = "ID khung giờ không được để trống")
+    private Integer timeSlotId;
+
+    @NotNull(message = "Ngày thi đấu không được để trống")
+    private LocalDate matchDate;
+
+    private String description;
 }

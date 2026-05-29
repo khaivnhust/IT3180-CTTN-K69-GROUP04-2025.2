@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS `services`;
 DROP TABLE IF EXISTS `price_rules`;
 DROP TABLE IF EXISTS `time_slots`;
 DROP TABLE IF EXISTS `pitches`;
+DROP TABLE IF EXISTS `match_requests`;
 DROP TABLE IF EXISTS `matches`;
 DROP TABLE IF EXISTS `venues`;
 DROP TABLE IF EXISTS `team_members`;
@@ -173,6 +174,7 @@ CREATE TABLE IF NOT EXISTS `matches` (
     `skill_level` VARCHAR(50) NOT NULL,
     `match_time` DATETIME NOT NULL,
     `status` VARCHAR(50) NOT NULL,
+    `description` TEXT,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_matches_venue_id`
         FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`),
@@ -180,4 +182,20 @@ CREATE TABLE IF NOT EXISTS `matches` (
         FOREIGN KEY (`host_team_id`) REFERENCES `teams` (`id`),
     CONSTRAINT `fk_matches_guest_team_id`
         FOREIGN KEY (`guest_team_id`) REFERENCES `teams` (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `match_requests` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `match_id` INT NOT NULL,
+    `guest_team_id` BIGINT NOT NULL,
+    `created_by_user_id` INT NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_match_requests_match_id`
+        FOREIGN KEY (`match_id`) REFERENCES `matches` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_match_requests_guest_team_id`
+        FOREIGN KEY (`guest_team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_match_requests_created_by_user_id`
+        FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );

@@ -52,17 +52,25 @@ public class TeamService {
         team.setCaptain(captain);
         team.setDescription(request.getDescription());
         team.setStatus(TeamStatus.PENDING);
-        team = teamRepository.save(team);
+        final Team savedTeam = teamRepository.save(team);
+
+        captain.setTeamId(savedTeam.getId());
+        userRepository.save(captain);
 
         List<TeamMember> members = new ArrayList<>();
         // Add captain as ACTIVE member
-        members.add(new TeamMember(team, captain.getEmail(), TeamMemberStatus.ACTIVE));
+        members.add(new TeamMember(savedTeam, captain.getEmail(), TeamMemberStatus.ACTIVE));
 
         // Add invited members
         if (request.getMemberEmails() != null) {
             for (String email : request.getMemberEmails()) {
                 if (email != null && !email.trim().isEmpty() && !email.equalsIgnoreCase(captain.getEmail())) {
-                    members.add(new TeamMember(team, email.trim(), TeamMemberStatus.INVITED));
+                    String trimmedEmail = email.trim();
+                    members.add(new TeamMember(savedTeam, trimmedEmail, TeamMemberStatus.INVITED));
+                    userRepository.findByEmail(trimmedEmail).ifPresent(u -> {
+                        u.setTeamId(savedTeam.getId());
+                        userRepository.save(u);
+                    });
                 }
             }
         }

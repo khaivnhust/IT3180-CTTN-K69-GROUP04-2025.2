@@ -12,7 +12,9 @@ interface MatchState {
   createNewMatch: (
     venueId: number,
     skillLevel: MatchSkillLevel,
-    matchTime: string,
+    timeSlotId: number,
+    matchDate: string,
+    description: string,
   ) => Promise<void>;
   joinMatchAction: (
     matchId: number,
@@ -44,10 +46,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }
   },
 
-  createNewMatch: async (venueId, skillLevel, matchTime) => {
+  createNewMatch: async (venueId, skillLevel, timeSlotId, matchDate, description) => {
     set({ loading: true });
     try {
-      await createMatch({ venueId, skillLevel, matchTime });
+      await createMatch({ venueId, skillLevel, timeSlotId, matchDate, description });
       const { selectedVenueId, selectedSkillLevel } = get();
       const list = await getOpenMatches(selectedVenueId, selectedSkillLevel);
       set({ matches: list, loading: false });

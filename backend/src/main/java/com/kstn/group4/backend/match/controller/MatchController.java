@@ -48,4 +48,13 @@ public class MatchController {
     ) {
         return ResponseEntity.ok(matchService.joinMatch(userPrincipal, id));
     }
+
+    @PostMapping("/requests/{requestId}/approve")
+    @PreAuthorize("hasAuthority('PLAYER')")
+    public ResponseEntity<MatchResponse> approveMatchRequest(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer requestId
+    ) {
+        return ResponseEntity.ok(matchService.approveMatchRequest(userPrincipal, requestId));
+    }
 }

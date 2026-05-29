@@ -38,6 +38,9 @@ public class Match {
     @Column(name = "match_time", nullable = false)
     private LocalDateTime matchTime;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;

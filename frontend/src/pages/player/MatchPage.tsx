@@ -1,7 +1,7 @@
 import { Search, Trophy, ShieldAlert, PlusCircle, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MatchCard, useMatchStore, CreateMatchModal } from "../../features/matchmaking";
-import { CreateTeamForm } from "../../features/team";
+import { CreateTeamForm, getMyTeam, type Team } from "../../features/team";
 import { PlayerNavBar } from "../../layouts/player/PlayerNavBar";
 import { usePlayerProfile } from "../../features/account";
 import { getVenues } from "@/features/venue/api/venueApi";
@@ -15,9 +15,21 @@ export function MatchPage() {
   const { userInfo, refetch: refetchProfile } = usePlayerProfile();
   const [venues, setVenues] = useState<VenueResponseDTO[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [myTeam, setMyTeam] = useState<Team | null>(null);
 
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [showCreateMatch, setShowCreateMatch] = useState(false);
+  const isCaptain = !!(myTeam && userInfo && myTeam.captainId === userInfo.id);
+
+  useEffect(() => {
+    if (userInfo && userInfo.teamId) {
+      getMyTeam()
+        .then((team) => setMyTeam(team))
+        .catch((err) => console.error("Lỗi khi tải thông tin đội bóng:", err));
+    } else {
+      setMyTeam(null);
+    }
+  }, [userInfo]);
 
   useEffect(() => {
     fetchMatches();
@@ -73,7 +85,13 @@ export function MatchPage() {
                 <>
                   {userInfo.teamId ? (
                     <button
-                      onClick={() => setShowCreateMatch(true)}
+                      onClick={() => {
+                        if (isCaptain) {
+                          setShowCreateMatch(true);
+                        } else {
+                          alert("Chỉ đội trưởng mới được phép tạo kèo.");
+                        }
+                      }}
                       className="inline-flex items-center gap-2 rounded-full bg-[#F8B416] hover:bg-[#e09e10] px-6 py-3.5 text-sm font-extrabold uppercase text-white shadow-[0_4px_12px_rgba(248,180,22,0.35)] transition duration-200 hover:scale-[1.03] active:scale-[0.98]"
                     >
                       <PlusCircle size={18} />

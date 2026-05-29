@@ -24,7 +24,9 @@ export const getOpenMatches = async (
 export const createMatch = async (data: {
   venueId: number;
   skillLevel: MatchSkillLevel;
-  matchTime: string; // Already formatted as yyyy-MM-ddTHH:mm:ss
+  timeSlotId: number;
+  matchDate: string;
+  description: string;
 }): Promise<MatchResponse> => {
   try {
     const response = await apiClient.post<MatchResponse>("/matches", data);
