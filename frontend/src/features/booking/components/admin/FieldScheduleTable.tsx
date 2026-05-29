@@ -6,7 +6,7 @@ import {
 } from "../../constants/booking.constants";
 import type { FieldScheduleRow, ScheduleSlot } from "../../types/booking.types";
 import { slotStatusStyles } from "../../constants/booking.constants";
-import { getRangeLabel } from "../../utils/booking.utils";
+import { formatCompactPrice, getRangeLabel } from "../../utils/booking.utils";
 import { useVenueContext as useFacilityContext } from "../../../venue/hooks/useVenueContext";
 
 interface FieldScheduleTableProps {
@@ -100,9 +100,16 @@ export function FieldScheduleTable({
                       <p className="text-sm font-semibold leading-tight">
                         {slot?.customerName ?? statusMeta.label}
                       </p>
-                      <p className="mt-1 text-xs opacity-90">
-                        {statusMeta.label}
-                      </p>
+                      {isDetailSlot ? (
+                        <p className="mt-1 text-xs opacity-90">
+                          {statusMeta.label}
+                        </p>
+                      ) : null}
+                      {slot?.price != null ? (
+                        <p className="mt-1 text-xs font-bold text-white/90">
+                          {formatCompactPrice(slot.price)}
+                        </p>
+                      ) : null}
                     </button>
                   </td>
                 );

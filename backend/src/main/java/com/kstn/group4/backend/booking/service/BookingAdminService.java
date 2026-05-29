@@ -4,6 +4,7 @@ import com.kstn.group4.backend.booking.dto.admin.PitchScheduleDto;
 import com.kstn.group4.backend.booking.dto.admin.ScheduleSlotDto;
 import com.kstn.group4.backend.venue.repository.PitchRepository;
 import com.kstn.group4.backend.venue.repository.PitchScheduleProjection;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,7 +21,11 @@ public class BookingAdminService {
 
     public List<PitchScheduleDto> getPitchSchedules(Long venueId, LocalDate date) {
         Integer vId = (venueId != null) ? venueId.intValue() : null;
-        List<PitchScheduleProjection> projections = pitchRepository.findPitchSchedulesNatively(vId, date);
+
+        // Determine if the requested date is a weekend for price lookup
+        boolean isWeekend = isWeekend(date);
+
+        List<PitchScheduleProjection> projections = pitchRepository.findPitchSchedulesNatively(vId, date, isWeekend);
 
         Map<Long, PitchScheduleDto> pitchMap = new LinkedHashMap<>();
 
@@ -45,17 +50,24 @@ public class BookingAdminService {
 
             ScheduleSlotDto slotDto = ScheduleSlotDto.builder()
                 .timeSlotId(proj.getTimeSlotId())
+                .slotNumber(proj.getSlotNumber())
                 .startTime(proj.getStartTime())
                 .endTime(proj.getEndTime())
                 .status(status)
                 .customerName(proj.getCustomerName())
                 .customerPhone(proj.getCustomerPhone())
                 .depositAmount(proj.getDepositAmount())
+                .price(proj.getPrice())
                 .build();
                 
             dto.getSlots().add(slotDto);
         }
 
         return new ArrayList<>(pitchMap.values());
+    }
+
+    private boolean isWeekend(LocalDate date) {
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
     }
 }

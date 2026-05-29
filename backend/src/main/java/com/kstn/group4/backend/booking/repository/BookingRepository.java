@@ -135,10 +135,12 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     List<Booking> findByBookingDate(@Param("bookingDate") LocalDate bookingDate);
 
     @Query("SELECT COUNT(b) > 0 FROM Booking b " +
-            "WHERE b.timeSlot.id = :timeSlotId " +
+            "WHERE b.pitch.id = :pitchId " +
+            "AND b.timeSlot.id = :timeSlotId " +
             "AND b.bookingDate = :bookingDate " +
             "AND b.status <> com.kstn.group4.backend.booking.entity.BookingStatus.CANCELLED")
-    boolean existsByTimeSlotIdAndBookingDate(
+    boolean existsByPitchIdAndTimeSlotIdAndBookingDate(
+            @Param("pitchId") Integer pitchId,
             @Param("timeSlotId") Integer timeSlotId,
             @Param("bookingDate") LocalDate bookingDate
     );
