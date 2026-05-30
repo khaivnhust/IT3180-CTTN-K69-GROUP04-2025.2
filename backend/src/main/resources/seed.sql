@@ -148,8 +148,23 @@ VALUES
 -- 4. PRICE RULES
 -- =========================
 INSERT INTO
-    `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `price`)
+    `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `coefficient`)
 VALUES
+    -- Pitch 1 (5-a-side) - 2 time slots
+    (1, 1, 0, 1.00), -- Morning slot (weekday)
+    (1, 2, 1, 1.20), -- Morning slot (weekend)
+    -- Pitch 2 (5-a-side) - 2 time slots
+    (2, 3, 0, 1.00), -- Afternoon slot (weekday)
+    (2, 4, 1, 1.20), -- Afternoon slot (weekend)
+    -- Pitch 3 (7-a-side) - 2 time slots
+    (3, 5, 0, 1.00), -- Evening slot (weekday)
+    (3, 6, 1, 1.20), -- Evening slot (weekend)
+    -- Pitch 4 (7-a-side) - 2 time slots
+    (4, 7, 0, 1.00), -- Night slot (weekday)
+    (4, 8, 1, 1.20), -- Night slot (weekend)
+    -- Pitch 5 (11-a-side) - 2 time slots
+    (5, 9, 0, 1.00), -- Standard weekday
+    (5, 10, 1, 1.20);
     -- Pitch 1 (5-a-side) - sample slots
     (1, 1, 0, 150000),
     (1, 1, 1, 180000),

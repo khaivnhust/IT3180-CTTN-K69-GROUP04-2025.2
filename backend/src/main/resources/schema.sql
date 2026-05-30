@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `price_rules` (
     `pitch_id` INT,
     `slot_number` INT NOT NULL,
     `is_weekend` BIT(1) NOT NULL,
-    `price` DECIMAL(38,2) NOT NULL,
+    `coefficient` DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_price_rules_pitch_id`
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `status` VARCHAR(255),
     `booking_type` VARCHAR(255),
     `total_price` DECIMAL(38,2),
+    `pricing_mode` VARCHAR(50) DEFAULT 'AUTO',
     `created_at` DATETIME,
     `time_slot_id` INT NOT NULL,
     PRIMARY KEY (`id`),
