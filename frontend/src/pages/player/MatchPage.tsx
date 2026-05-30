@@ -16,20 +16,29 @@ export function MatchPage() {
   const [venues, setVenues] = useState<VenueResponseDTO[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [myTeam, setMyTeam] = useState<Team | null>(null);
+  const [prevUserId, setPrevUserId] = useState<number | string | null>(null);
 
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [showCreateMatch, setShowCreateMatch] = useState(false);
   const isCaptain = !!(myTeam && userInfo && myTeam.captainId === userInfo.id);
 
+  // Sync state during rendering to reset myTeam when user changes, avoiding cascading renders in useEffect
+  const currentUserId = userInfo?.id || null;
+  if (currentUserId !== prevUserId) {
+    setPrevUserId(currentUserId);
+    setMyTeam(null);
+  }
+
   useEffect(() => {
-    if (userInfo && userInfo.teamId) {
+    if (userInfo?.teamId) {
       getMyTeam()
         .then((team) => setMyTeam(team))
-        .catch((err) => console.error("Lỗi khi tải thông tin đội bóng:", err));
-    } else {
-      setMyTeam(null);
+        .catch((err) => {
+          console.error("Lỗi khi tải thông tin đội bóng:", err);
+          setMyTeam(null);
+        });
     }
-  }, [userInfo]);
+  }, [userInfo?.teamId]);
 
   useEffect(() => {
     refetchProfile();
