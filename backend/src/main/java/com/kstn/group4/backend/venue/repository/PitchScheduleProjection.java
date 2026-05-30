@@ -8,6 +8,7 @@ public interface PitchScheduleProjection {
     String getPitchName();
     String getVenueName();
     Long getTimeSlotId();
+    Integer getSlotNumber();
     LocalTime getStartTime();
     LocalTime getEndTime();
     Boolean getIsActive();
@@ -15,4 +16,5 @@ public interface PitchScheduleProjection {
     String getCustomerName();
     String getCustomerPhone();
     BigDecimal getDepositAmount();
+    BigDecimal getPrice();
 }

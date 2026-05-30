@@ -13,10 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ScheduleSlotDto {
     private Long timeSlotId;
+    private Integer slotNumber;
     private LocalTime startTime;
     private LocalTime endTime;
     private String status;
     private String customerName;
     private String customerPhone;
     private BigDecimal depositAmount;
+    private BigDecimal price;
 }

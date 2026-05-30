@@ -9,6 +9,7 @@ import java.time.LocalTime;
 public record AdminBookingSummaryResponse(
         Integer id,             // Để định danh đơn
         String customerName,    // Người đặt
+        String customerPhone,   // Số điện thoại người đặt
         String venueName,       // Khu sân (VD: Sân Bách Khoa)
         String pitchName,       // Sân số mấy (VD: Sân 7 - A1)
         LocalDate bookingDate,  // Ngày đá
