@@ -140,23 +140,23 @@ VALUES
 -- Slot numbers represent time periods: 1-10 (e.g., 6:30-7:30, 7:30-8:30, etc.)
 -- is_weekend: 0 = weekday, 1 = weekend
 INSERT INTO
-    `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `price`)
+    `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `coefficient`)
 VALUES
     -- Pitch 1 (5-a-side) - 2 time slots
-    (1, 1, 0, 150000), -- Morning slot (weekday)
-    (1, 2, 1, 180000), -- Morning slot (weekend)
+    (1, 1, 0, 1.00), -- Morning slot (weekday)
+    (1, 2, 1, 1.20), -- Morning slot (weekend)
     -- Pitch 2 (5-a-side) - 2 time slots
-    (2, 3, 0, 150000), -- Afternoon slot (weekday)
-    (2, 4, 1, 180000), -- Afternoon slot (weekend)
+    (2, 3, 0, 1.00), -- Afternoon slot (weekday)
+    (2, 4, 1, 1.20), -- Afternoon slot (weekend)
     -- Pitch 3 (7-a-side) - 2 time slots
-    (3, 5, 0, 250000), -- Evening slot (weekday)
-    (3, 6, 1, 300000), -- Evening slot (weekend)
+    (3, 5, 0, 1.00), -- Evening slot (weekday)
+    (3, 6, 1, 1.20), -- Evening slot (weekend)
     -- Pitch 4 (7-a-side) - 2 time slots
-    (4, 7, 0, 250000), -- Night slot (weekday)
-    (4, 8, 1, 300000), -- Night slot (weekend)
+    (4, 7, 0, 1.00), -- Night slot (weekday)
+    (4, 8, 1, 1.20), -- Night slot (weekend)
     -- Pitch 5 (11-a-side) - 2 time slots
-    (5, 9, 0, 500000), -- Standard weekday
-    (5, 10, 1, 600000);
+    (5, 9, 0, 1.00), -- Standard weekday
+    (5, 10, 1, 1.20);
 
 -- =========================
 -- 4. TIME SLOTS (11 slots per pitch, 90 minutes each from 06:30 to 23:00)

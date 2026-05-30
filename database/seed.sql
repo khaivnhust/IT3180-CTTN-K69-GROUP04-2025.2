@@ -36,13 +36,13 @@ INSERT INTO `pitches` (`id`, `name`, `pitch_type`, `is_active`, `base_price`, `v
 (3, 'San 11C', 'SAN_11', b'1', 900000.00, 1);
 
 -- 3) Seed Price Rules (moi san 2 rule: ngay thuong/cuoi tuan cho slot 1)
-INSERT INTO `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `price`) VALUES
-(1, 1, b'0', 350000.00),
-(1, 1, b'1', 420000.00),
-(2, 1, b'0', 500000.00),
-(2, 1, b'1', 580000.00),
-(3, 1, b'0', 900000.00),
-(3, 1, b'1', 1000000.00);
+INSERT INTO `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `coefficient`) VALUES
+(1, 1, b'0', 1.00),
+(1, 1, b'1', 1.20),
+(2, 1, b'0', 1.00),
+(2, 1, b'1', 1.16),
+(3, 1, b'0', 1.00),
+(3, 1, b'1', 1.11);
 
 -- 4) Seed Services
 INSERT INTO `services` (`pitch_id`, `name`, `price`, `unit`) VALUES
