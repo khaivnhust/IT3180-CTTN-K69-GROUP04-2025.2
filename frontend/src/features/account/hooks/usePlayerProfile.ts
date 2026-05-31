@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import apiClient from "@/shared/api/apiClient";
 import { getApiErrorMessage, logApiError } from "@/shared/utils/apiError";
+import type { PlayerProfileInfo } from "../types/account.types";
 
 type ProfileEventListener = () => void;
 const listeners: ProfileEventListener[] = [];
