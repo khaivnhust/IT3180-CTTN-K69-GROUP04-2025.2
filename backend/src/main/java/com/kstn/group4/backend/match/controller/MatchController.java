@@ -23,7 +23,7 @@ public class MatchController {
     private final MatchService matchService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('PLAYER')")
+    @PreAuthorize("hasAnyAuthority('PLAYER', 'ROLE_PLAYER')")
     public ResponseEntity<MatchResponse> createMatch(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody CreateMatchRequest request
@@ -41,7 +41,7 @@ public class MatchController {
     }
 
     @PostMapping("/{id}/join")
-    @PreAuthorize("hasAuthority('PLAYER')")
+    @PreAuthorize("hasAnyAuthority('PLAYER', 'ROLE_PLAYER')")
     public ResponseEntity<MatchResponse> joinMatch(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Integer id
@@ -50,7 +50,7 @@ public class MatchController {
     }
 
     @PostMapping("/requests/{requestId}/approve")
-    @PreAuthorize("hasAuthority('PLAYER')")
+    @PreAuthorize("hasAnyAuthority('PLAYER', 'ROLE_PLAYER')")
     public ResponseEntity<MatchResponse> approveMatchRequest(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Integer requestId
