@@ -49,7 +49,10 @@ public interface PitchRepository extends JpaRepository<Pitch, Integer> {
             "ts.id as timeSlotId, ts.slot_number as slotNumber, ts.start_time as startTime, ts.end_time as endTime, ts.is_active as isActive, " +
             "b.status as bookingStatus, u.username as customerName, u.phone_number as customerPhone, " +
             "bp.paid_amount as depositAmount, " +
-            "pr.price as price " +
+            "(p.base_price * COALESCE(pr.coefficient, 1.0 + " +
+            "    CASE WHEN :isWeekend = true THEN 0.2 ELSE 0.0 END + " +
+            "    CASE WHEN ts.start_time >= '17:00:00' AND ts.start_time < '22:00:00' THEN 0.3 ELSE 0.0 END" +
+            ")) as price " +
             "FROM pitches p " +
             "JOIN venues v ON p.venue_id = v.id " +
             "CROSS JOIN time_slots ts " +
