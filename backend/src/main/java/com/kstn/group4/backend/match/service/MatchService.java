@@ -174,7 +174,13 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchResponse> getAllMatchesForAdmin() {
+    public List<MatchResponse> getAllMatchesForAdmin(Integer venueId) {
+        if (venueId != null) {
+            return matchRepository.findAll().stream()
+                    .filter(m -> m.getVenue().getId().equals(venueId))
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
         return matchRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

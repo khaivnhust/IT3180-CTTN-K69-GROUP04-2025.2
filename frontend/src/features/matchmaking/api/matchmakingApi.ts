@@ -49,9 +49,16 @@ export const joinMatch = async (matchId: number): Promise<MatchResponse> => {
   }
 };
 
-export const getAdminAllMatches = async (): Promise<MatchResponse[]> => {
+export const getAdminAllMatches = async (
+  venueId?: number | null,
+): Promise<MatchResponse[]> => {
   try {
-    const response = await apiClient.get<MatchResponse[]>("/admin/matches");
+    const params: Record<string, string | number> = {};
+    if (venueId) params.venueId = venueId;
+
+    const response = await apiClient.get<MatchResponse[]>("/admin/matches", {
+      params,
+    });
     return response.data;
   } catch (error) {
     logApiError("getAdminAllMatches", error);
