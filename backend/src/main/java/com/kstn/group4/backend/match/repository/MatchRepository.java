@@ -4,6 +4,7 @@ import com.kstn.group4.backend.match.entity.Match;
 import com.kstn.group4.backend.match.enums.MatchSkillLevel;
 import com.kstn.group4.backend.match.enums.MatchStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -36,5 +37,10 @@ public interface MatchRepository extends JpaRepository<Match, Integer> {
     @Query("SELECT m FROM Match m WHERE m.hostTeam.id = :teamId OR m.guestTeam.id = :teamId")
     List<Match> findByHostOrGuestTeamId(@Param("teamId") Long teamId);
 
+    @EntityGraph(attributePaths = {"venue", "hostTeam", "guestTeam"})
     List<Match> findByVenueId(Integer venueId);
+
+    @Override
+    @EntityGraph(attributePaths = {"venue", "hostTeam", "guestTeam"})
+    List<Match> findAll();
 }
