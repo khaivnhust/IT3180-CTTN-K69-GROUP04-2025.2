@@ -3,6 +3,7 @@ package com.kstn.group4.backend.match.service;
 import com.kstn.group4.backend.booking.entity.Booking;
 import com.kstn.group4.backend.booking.entity.BookingStatus;
 import com.kstn.group4.backend.booking.repository.BookingRepository;
+import com.kstn.group4.backend.booking.service.BookingService;
 import com.kstn.group4.backend.config.security.services.UserPrincipal;
 import com.kstn.group4.backend.exception.BusinessException;
 import com.kstn.group4.backend.exception.ResourceNotFoundException;
@@ -48,6 +49,7 @@ public class MatchService {
     private final MatchRequestRepository matchRequestRepository;
     private final PitchRepository pitchRepository;
     private final BookingRepository bookingRepository;
+    private final BookingService bookingService;
 
     @Transactional
     public MatchResponse createMatch(UserPrincipal userPrincipal, CreateMatchRequest request) {
@@ -181,17 +183,13 @@ public class MatchService {
 
             Pitch selectedPitch = availablePitches.get(0);
 
-            // Create auto-booking with CONFIRMED status
-            Booking booking = new Booking();
-            booking.setPlayer(match.getHostTeam().getCaptain());
-            booking.setPitch(selectedPitch);
-            booking.setTimeSlot(match.getTimeSlot());
-            booking.setBookingDate(match.getMatchTime().toLocalDate());
-            booking.setStartTime(match.getTimeSlot().getStartTime());
-            booking.setEndTime(match.getTimeSlot().getEndTime());
-            booking.setStatus(BookingStatus.CONFIRMED);
-            booking.setBookingType("MATCH_AUTO");
-            bookingRepository.save(booking);
+            // Create auto-booking with CONFIRMED status and calculated price
+            Booking booking = bookingService.createMatchAutoBooking(
+                    match.getHostTeam().getCaptain().getId(),
+                    selectedPitch.getId(),
+                    match.getTimeSlot().getId(),
+                    match.getMatchTime().toLocalDate()
+            );
 
             // Update match state
             match.setGuestTeam(matchRequest.getGuestTeam());
