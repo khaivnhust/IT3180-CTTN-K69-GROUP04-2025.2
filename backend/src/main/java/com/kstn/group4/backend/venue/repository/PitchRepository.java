@@ -37,6 +37,12 @@ public interface PitchRepository extends JpaRepository<Pitch, Integer> {
 
     List<Pitch> findByVenueId(Integer venueId);
 
+    @Query(
+        value = "SELECT p FROM Pitch p LEFT JOIN FETCH p.venue WHERE p.venue.id = :venueId",
+        countQuery = "SELECT COUNT(p) FROM Pitch p WHERE p.venue.id = :venueId"
+    )
+    Page<Pitch> findByVenueIdWithVenue(@Param("venueId") Integer venueId, Pageable pageable);
+
     Page<Pitch> findByVenueId(Integer venueId, Pageable pageable);
 
         Page<Pitch> findByVenueIdAndVenueManagerId(Integer venueId, Integer managerId, Pageable pageable);
@@ -44,6 +50,9 @@ public interface PitchRepository extends JpaRepository<Pitch, Integer> {
         Optional<Pitch> findByIdAndVenueManagerId(Integer id, Integer managerId);
 
         long countByVenueId(Integer venueId);
+
+    @Query("SELECT p.venue.id, COUNT(p) FROM Pitch p WHERE p.venue.id IN :venueIds GROUP BY p.venue.id")
+    List<Object[]> countPitchesGroupByVenueIds(@Param("venueIds") List<Integer> venueIds);
 
     List<Pitch> findByVenueIdAndIsActiveTrue(Integer venueId);
 
