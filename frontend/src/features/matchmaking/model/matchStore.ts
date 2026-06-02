@@ -57,12 +57,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   joinMatchAction: async (matchId) => {
-    try {
-      await joinMatch(matchId);
-      // After successful join, just refresh the match list to get accurate server state
-      await get().fetchMatches();
-    } catch (error) {
-      throw error;
-    }
+    await joinMatch(matchId);
+    // After successful join, just refresh the match list to get accurate server state
+    await get().fetchMatches();
   },
 }));
