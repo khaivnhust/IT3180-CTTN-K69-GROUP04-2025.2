@@ -42,10 +42,10 @@ public class AdminBookingController {
     public ResponseEntity<Page<AdminBookingSummaryResponse>> getAllBookings(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer pitchId,
+            @RequestParam(required = false) Integer venueId,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(bookingService.searchAllBookingsForAdmin(date, status, pitchId, pageable));
+        return ResponseEntity.ok(bookingService.searchAllBookingsForAdmin(date, status, venueId, pageable));
     }
 
     /**

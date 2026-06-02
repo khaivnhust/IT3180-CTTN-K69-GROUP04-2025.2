@@ -20,6 +20,7 @@ import com.kstn.group4.backend.venue.entity.TimeSlot;
 import com.kstn.group4.backend.venue.repository.PitchRepository;
 import com.kstn.group4.backend.venue.repository.PriceRuleRepository;
 import com.kstn.group4.backend.venue.repository.TimeSlotRepository;
+import com.kstn.group4.backend.activitylog.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +52,7 @@ public class BookingService {
     private final PitchRepository pitchRepository;
     private final PriceRuleRepository priceRuleRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final ActivityLogService activityLogService;
 
     // ==================== ADMIN METHODS ====================
 
@@ -64,7 +66,7 @@ public class BookingService {
     public Page<AdminBookingSummaryResponse> searchAllBookingsForAdmin(
             LocalDate date,
             String status,
-            Integer pitchId,
+            Integer venueId,
             Pageable pageable
     ) {
         BookingStatus bookingStatus = null;
@@ -82,7 +84,7 @@ public class BookingService {
         Page<Booking> bookings = bookingRepository.searchByFilters(
                 date,
                 bookingStatus,
-                pitchId,
+                venueId,
                 pageable
         );
 
@@ -122,6 +124,15 @@ public class BookingService {
                     BigDecimal deposit = calculateDepositAmount(booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO);
                     booking.setTotalPrice(deposit);
                 }
+                
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                Integer adminId = null;
+                String adminName = "System";
+                if (auth != null && auth.getPrincipal() instanceof com.kstn.group4.backend.config.security.services.UserPrincipal principal) {
+                    adminId = principal.getId();
+                    adminName = principal.getAppUsername();
+                }
+                activityLogService.log(adminId, adminName, "CANCEL_BOOKING", "BOOKING", bookingId.toString(), "Hủy đơn đặt sân", null, null);
             }
             
             booking.setStatus(newStatus);
