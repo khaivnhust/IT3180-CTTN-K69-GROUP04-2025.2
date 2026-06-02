@@ -15,7 +15,9 @@ import { BookingField } from "./pages/player/BookingField.tsx";
 import { MatchPage } from "./pages/player/MatchPage.tsx";
 import { ProfilePage } from "./pages/player/ProfilePage.tsx";
 import { PlayerTeamPage } from "./pages/player/PlayerTeamPage.tsx";
+import { ForbiddenPage } from "./pages/ForbiddenPage";
 
+import { AdminProtectedRoute } from "./features/auth/components/AdminProtectedRoute";
 import { ToastContainer } from "./shared/components/Toast/Toast.tsx";
 
 function App() {
@@ -31,7 +33,15 @@ function App() {
         <Route path="/match" element={<MatchPage />} />
         <Route path="/team" element={<PlayerTeamPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
           <Route index element={<AdminDashboardPage />} />
           <Route path="teams" element={<TeamsPage />} />
           <Route path="orders" element={<OrdersPage />} />
