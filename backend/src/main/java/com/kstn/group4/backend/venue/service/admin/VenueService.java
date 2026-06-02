@@ -13,6 +13,8 @@ import com.kstn.group4.backend.activitylog.service.ActivityLogService;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -93,15 +95,26 @@ public class VenueService {
 
     @Transactional(readOnly = true)
     public Page<AdminVenueResponseDTO> getVenuesByManager(Integer managerId, Pageable pageable) {
-        return venueRepository.findAll(pageable)
-                .map(this::toAdminVenueResponseWithoutManager);
+        Page<Venue> venuesPage = venueRepository.findAll(pageable);
+        List<Integer> venueIds = venuesPage.getContent().stream()
+                .map(Venue::getId)
+                .toList();
+        Map<Integer, Long> pitchCounts = new HashMap<>();
+        if (!venueIds.isEmpty()) {
+            List<Object[]> results = pitchRepository.countPitchesGroupByVenueIds(venueIds);
+            for (Object[] row : results) {
+                pitchCounts.put((Integer) row[0], (Long) row[1]);
+            }
+        }
+        return venuesPage.map(venue -> toAdminVenueResponseWithoutManager(venue, pitchCounts));
     }
 
     @Transactional(readOnly = true)
     public AdminVenueResponseDTO getVenueByManager(Integer venueId, Integer managerId) {
         Venue venue = venueRepository.findById(venueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cụm sân với ID: " + venueId, "Venue"));
-        return toAdminVenueResponseWithoutManager(venue);
+        Map<Integer, Long> pitchCounts = Map.of(venue.getId(), pitchRepository.countByVenueId(venue.getId()));
+        return toAdminVenueResponseWithoutManager(venue, pitchCounts);
     }
 
     public AdminVenueResponseDTO createVenueByManager(VenueUpsertRequest request, String imageUrl, Integer managerId) {
@@ -148,15 +161,26 @@ public class VenueService {
 
     @Transactional(readOnly = true)
     public Page<AdminVenueResponseDTO> getAllVenuesForAdmin(Pageable pageable) {
-        return venueRepository.findAll(pageable)
-                .map(this::toAdminVenueResponseWithoutManager);
+        Page<Venue> venuesPage = venueRepository.findAll(pageable);
+        List<Integer> venueIds = venuesPage.getContent().stream()
+                .map(Venue::getId)
+                .toList();
+        Map<Integer, Long> pitchCounts = new HashMap<>();
+        if (!venueIds.isEmpty()) {
+            List<Object[]> results = pitchRepository.countPitchesGroupByVenueIds(venueIds);
+            for (Object[] row : results) {
+                pitchCounts.put((Integer) row[0], (Long) row[1]);
+            }
+        }
+        return venuesPage.map(venue -> toAdminVenueResponseWithoutManager(venue, pitchCounts));
     }
 
     @Transactional(readOnly = true)
     public AdminVenueResponseDTO getVenueByIdForAdmin(Integer venueId) {
         Venue venue = venueRepository.findById(venueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cụm sân với ID: " + venueId, "Venue"));
-        return toAdminVenueResponseWithoutManager(venue);
+        Map<Integer, Long> pitchCounts = Map.of(venue.getId(), pitchRepository.countByVenueId(venue.getId()));
+        return toAdminVenueResponseWithoutManager(venue, pitchCounts);
     }
 
     private VenueDetailResponse toVenueDetailResponse(Venue venue) {
@@ -192,8 +216,8 @@ public class VenueService {
         );
     }
 
-    private AdminVenueResponseDTO toAdminVenueResponseWithoutManager(Venue venue) {
-        long totalPitches = pitchRepository.countByVenueId(venue.getId());
+    private AdminVenueResponseDTO toAdminVenueResponseWithoutManager(Venue venue, Map<Integer, Long> pitchCounts) {
+        long totalPitches = pitchCounts.getOrDefault(venue.getId(), 0L);
         BigDecimal revenue = BigDecimal.ZERO;
 
         return new AdminVenueResponseDTO(
