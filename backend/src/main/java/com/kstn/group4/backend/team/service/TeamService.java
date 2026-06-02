@@ -16,6 +16,7 @@ import com.kstn.group4.backend.user.entity.User;
 import com.kstn.group4.backend.user.repository.UserRepository;
 import com.kstn.group4.backend.match.repository.MatchRepository;
 import com.kstn.group4.backend.match.entity.Match;
+import com.kstn.group4.backend.activitylog.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final MatchRepository matchRepository;
+    private final ActivityLogService activityLogService;
 
     @Transactional
     public TeamResponse createTeam(UserPrincipal userPrincipal, CreateTeamRequest request) {
@@ -113,6 +115,17 @@ public class TeamService {
                 .collect(Collectors.toList());
     }
 
+    private void logAdminActivity(String actionType, String targetId, String description) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Integer adminId = null;
+        String adminName = "System";
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal principal) {
+            adminId = principal.getId();
+            adminName = principal.getAppUsername();
+        }
+        activityLogService.log(adminId, adminName, actionType, "TEAM", targetId, description, null, null);
+    }
+
     @Transactional
     public TeamResponse updateTeamStatus(Long teamId, TeamStatusUpdateRequest request) {
         Team team = teamRepository.findById(teamId)
@@ -125,6 +138,7 @@ public class TeamService {
             User captain = team.getCaptain();
             captain.setTeamId(team.getId());
             userRepository.save(captain);
+            logAdminActivity("APPROVE_TEAM", teamId.toString(), "Phê duyệt đội bóng: " + team.getName());
         }
 
         return mapToResponse(team);
@@ -153,6 +167,8 @@ public class TeamService {
 
         // 4. Delete team
         teamRepository.delete(team);
+
+        logAdminActivity("DELETE_TEAM", teamId.toString(), "Xóa đội bóng: " + team.getName());
     }
 
     @Transactional
@@ -161,6 +177,7 @@ public class TeamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
         team.setReputationScore(team.getReputationScore() + amount);
         teamRepository.save(team);
+        logAdminActivity("ADD_TEAM_REPUTATION", teamId.toString(), "Cộng " + amount + " điểm uy tín cho đội " + team.getName());
         return mapToResponse(team);
     }
 
@@ -170,6 +187,7 @@ public class TeamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
         team.setReputationScore(Math.max(0, team.getReputationScore() - amount));
         teamRepository.save(team);
+        logAdminActivity("DEDUCT_TEAM_REPUTATION", teamId.toString(), "Trừ " + amount + " điểm uy tín của đội " + team.getName());
         return mapToResponse(team);
     }
 
@@ -180,6 +198,7 @@ public class TeamService {
         team.setStatus(TeamStatus.BANNED);
         team.setBannedUntil(LocalDateTime.now().plusDays(days));
         teamRepository.save(team);
+        logAdminActivity("BAN_TEAM", teamId.toString(), "Cấm đội bóng: " + team.getName() + " trong " + days + " ngày");
         return mapToResponse(team);
     }
 

@@ -29,6 +29,7 @@ import com.kstn.group4.backend.venue.entity.Venue;
 import com.kstn.group4.backend.venue.repository.PitchRepository;
 import com.kstn.group4.backend.venue.repository.TimeSlotRepository;
 import com.kstn.group4.backend.venue.repository.VenueRepository;
+import com.kstn.group4.backend.activitylog.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ public class MatchService {
     private final PitchRepository pitchRepository;
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
+    private final ActivityLogService activityLogService;
 
     @Transactional
     public MatchResponse createMatch(UserPrincipal userPrincipal, CreateMatchRequest request) {
@@ -249,6 +251,15 @@ public class MatchService {
             throw new ResourceNotFoundException("Không tìm thấy trận đấu với ID: " + id, "Match");
         }
         matchRepository.deleteById(id);
+
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Integer adminId = null;
+        String adminName = "System";
+        if (auth != null && auth.getPrincipal() instanceof com.kstn.group4.backend.config.security.services.UserPrincipal principal) {
+            adminId = principal.getId();
+            adminName = principal.getAppUsername();
+        }
+        activityLogService.log(adminId, adminName, "CANCEL_MATCH", "MATCH", id.toString(), "Hủy/Xóa trận đấu cáp kèo", null, null);
     }
 
     private MatchResponse mapToResponse(Match match) {

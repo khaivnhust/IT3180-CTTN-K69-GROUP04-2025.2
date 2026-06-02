@@ -38,12 +38,12 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             "LEFT JOIN FETCH b.pitch " +
             "WHERE (:date IS NULL OR b.bookingDate = :date) " +
             "AND (:status IS NULL OR b.status = :status) " +
-            "AND (:pitchId IS NULL OR b.pitch.id = :pitchId) " +
+            "AND (:venueId IS NULL OR b.pitch.venue.id = :venueId) " +
             "ORDER BY b.bookingDate DESC, b.startTime DESC")
     Page<Booking> searchByFilters(
             @Param("date") LocalDate date,
             @Param("status") BookingStatus status,
-            @Param("pitchId") Integer pitchId,
+            @Param("venueId") Integer venueId,
             Pageable pageable
     );
 

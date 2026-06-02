@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `activity_logs`;
 DROP TABLE IF EXISTS `booking_payments`;
 DROP TABLE IF EXISTS `pitch_reviews`;
 DROP TABLE IF EXISTS `bookings`;
@@ -203,4 +204,18 @@ CREATE TABLE IF NOT EXISTS `match_requests` (
         FOREIGN KEY (`guest_team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_match_requests_created_by_user_id`
         FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS `activity_logs` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` INT,
+    `user_name` VARCHAR(255) NOT NULL,
+    `action_type` VARCHAR(255) NOT NULL,
+    `target_type` VARCHAR(255) NOT NULL,
+    `target_id` VARCHAR(255) NOT NULL,
+    `description` TEXT,
+    `old_value` TEXT,
+    `new_value` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
 );
