@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { ActivityLogTable } from "../../features/activitylog";
 import {
   FilterBar,
   PitchPerformanceChart,
@@ -119,6 +120,11 @@ export function AdminDashboardPage() {
         <div className="min-h-[200px]">
           <RecentOrderList recentOrders={recentOrders} isLoading={isLoading} />
         </div>
+      </div>
+
+      {/* Activity Log List */}
+      <div className="grid gap-6">
+        <ActivityLogTable />
       </div>
     </section>
   );

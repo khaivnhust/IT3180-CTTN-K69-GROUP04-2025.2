@@ -5,6 +5,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ==========================================
 -- CLEAR DATA (EXCEPT USERS TO PROTECT TOKENS)
 -- ==========================================
+DELETE FROM `activity_logs`;
 DELETE FROM `booking_payments`;
 DELETE FROM `pitch_reviews`;
 DELETE FROM `bookings`;
@@ -18,6 +19,7 @@ DELETE FROM `team_members`;
 DELETE FROM `teams`;
 
 -- Reset auto increments
+ALTER TABLE `activity_logs` AUTO_INCREMENT = 1;
 ALTER TABLE `venues` AUTO_INCREMENT = 1;
 ALTER TABLE `pitches` AUTO_INCREMENT = 1;
 ALTER TABLE `price_rules` AUTO_INCREMENT = 1;
