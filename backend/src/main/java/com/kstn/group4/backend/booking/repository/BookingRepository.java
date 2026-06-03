@@ -24,7 +24,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     @Query("SELECT b FROM Booking b " +
             "LEFT JOIN FETCH b.player " +
-            "LEFT JOIN FETCH b.pitch " +
+            "LEFT JOIN FETCH b.pitch p " +
+            "LEFT JOIN FETCH p.venue " +
             "WHERE b.id = :id")
     Optional<Booking> findByIdWithDetails(@Param("id") Integer id);
 
@@ -35,10 +36,11 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     @Query("SELECT DISTINCT b FROM Booking b " +
             "LEFT JOIN FETCH b.player " +
-            "LEFT JOIN FETCH b.pitch " +
+            "LEFT JOIN FETCH b.pitch p " +
+            "LEFT JOIN FETCH p.venue " +
             "WHERE (:date IS NULL OR b.bookingDate = :date) " +
             "AND (:status IS NULL OR b.status = :status) " +
-            "AND (:venueId IS NULL OR b.pitch.venue.id = :venueId) " +
+            "AND (:venueId IS NULL OR p.venue.id = :venueId) " +
             "ORDER BY b.bookingDate DESC, b.startTime DESC")
     Page<Booking> searchByFilters(
             @Param("date") LocalDate date,

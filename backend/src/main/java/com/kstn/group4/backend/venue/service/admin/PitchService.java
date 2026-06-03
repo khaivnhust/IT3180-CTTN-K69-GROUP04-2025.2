@@ -58,8 +58,33 @@ public class PitchService {
         Venue venue = venueRepository.findById(venueId)
             .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cụm sân với ID: " + venueId, "Venue"));
 
-        return pitchRepository.findByVenueId(venue.getId(), pageable)
-            .map(pitch -> getPitchDetailForManager(pitch.getId(), managerId));
+        Page<Pitch> pitchesPage = pitchRepository.findByVenueIdWithVenue(venue.getId(), pageable);
+
+        List<Integer> pitchIds = pitchesPage.getContent().stream()
+            .map(Pitch::getId)
+            .toList();
+
+        Map<Integer, List<PriceRule>> rulesByPitchId = new HashMap<>();
+        if (!pitchIds.isEmpty()) {
+            List<PriceRule> allRules = priceRuleRepository.findByPitchIdInOrderBySlotNumberAscIsWeekendAsc(pitchIds);
+            for (PriceRule rule : allRules) {
+                rulesByPitchId.computeIfAbsent(rule.getPitch().getId(), k -> new ArrayList<>()).add(rule);
+            }
+        }
+
+        return pitchesPage.map(pitch -> {
+            List<PriceRule> rules = rulesByPitchId.getOrDefault(pitch.getId(), List.of());
+            return new PitchDetailResponse(
+                pitch.getId(),
+                pitch.getName(),
+                pitch.getPitchType(),
+                pitch.getIsActive(),
+                pitch.getVenue() != null ? pitch.getVenue().getId() : null,
+                pitch.getVenue() != null ? pitch.getVenue().getName() : null,
+                pitch.getBasePrice(),
+                toSlotPriceTable(rules, pitch.getBasePrice())
+            );
+        });
     }
 
     @Transactional(readOnly = true)
