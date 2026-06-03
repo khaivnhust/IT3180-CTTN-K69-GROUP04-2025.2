@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/bookings")
-@PreAuthorize("hasAuthority('ADMIN')")
+@PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
 public class AdminBookingController {
 
     private final BookingService bookingService;
@@ -42,10 +42,10 @@ public class AdminBookingController {
     public ResponseEntity<Page<AdminBookingSummaryResponse>> getAllBookings(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Integer pitchId,
+            @RequestParam(required = false) Integer venueId,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(bookingService.searchAllBookingsForAdmin(date, status, pitchId, pageable));
+        return ResponseEntity.ok(bookingService.searchAllBookingsForAdmin(date, status, venueId, pageable));
     }
 
     /**
@@ -67,5 +67,17 @@ public class AdminBookingController {
         // Truyền cả object request vào, không truyền request.status()
         bookingService.updateBookingStatus(bookingId, request); 
         return ResponseEntity.ok().build();
-}
+    }
+
+    /**
+     * Override booking price manually
+     */
+    @PutMapping("/{id}/price")
+    public ResponseEntity<Void> overrideBookingPrice(
+            @PathVariable("id") Integer bookingId,
+            @Valid @RequestBody com.kstn.group4.backend.booking.dto.admin.AdminOverridePriceRequest request
+    ) {
+        bookingService.overrideBookingPrice(bookingId, request.newPrice());
+        return ResponseEntity.ok().build();
+    }
 }

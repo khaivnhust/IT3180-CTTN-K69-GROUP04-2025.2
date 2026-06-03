@@ -1,3 +1,16 @@
+DROP TABLE IF EXISTS `booking_payments`;
+DROP TABLE IF EXISTS `pitch_reviews`;
+DROP TABLE IF EXISTS `bookings`;
+DROP TABLE IF EXISTS `services`;
+DROP TABLE IF EXISTS `price_rules`;
+DROP TABLE IF EXISTS `time_slots`;
+DROP TABLE IF EXISTS `pitches`;
+DROP TABLE IF EXISTS `matches`;
+DROP TABLE IF EXISTS `venues`;
+DROP TABLE IF EXISTS `team_members`;
+DROP TABLE IF EXISTS `teams`;
+DROP TABLE IF EXISTS `users`;
+
 CREATE TABLE IF NOT EXISTS `users` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(255) NOT NULL,
@@ -5,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `password` VARCHAR(255),
     `role` VARCHAR(255),
     `created_at` DATETIME,
-    `team_id` INT,
+    `team_id` BIGINT,
     `phone_number` VARCHAR(20),
     `avatar_url` VARCHAR(255),
     PRIMARY KEY (`id`)
@@ -37,12 +50,27 @@ CREATE TABLE IF NOT EXISTS `pitches` (
         FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`)
 );
 
+-- ============================================================
+-- TIME_SLOTS: Master Data — chỉ 11 dòng duy nhất cho toàn hệ thống
+-- Không có pitch_id. Mỗi dòng là 1 khung giờ 90 phút cố định.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `time_slots` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `slot_number` INT NOT NULL,
+    `start_time` TIME NOT NULL,
+    `end_time` TIME NOT NULL,
+    `is_active` BIT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uk_time_slots_slot_number`
+        UNIQUE (`slot_number`)
+);
+
 CREATE TABLE IF NOT EXISTS `price_rules` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `pitch_id` INT,
     `slot_number` INT NOT NULL,
     `is_weekend` BIT(1) NOT NULL,
-    `price` DECIMAL(38,2) NOT NULL,
+    `coefficient` DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_price_rules_pitch_id`
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
@@ -76,12 +104,18 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `status` VARCHAR(255),
     `booking_type` VARCHAR(255),
     `total_price` DECIMAL(38,2),
+    `pricing_mode` VARCHAR(50) DEFAULT 'AUTO',
     `created_at` DATETIME,
+    `time_slot_id` INT NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_bookings_player_id`
         FOREIGN KEY (`player_id`) REFERENCES `users` (`id`),
     CONSTRAINT `fk_bookings_pitch_id`
-        FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`)
+        FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
+    CONSTRAINT `fk_bookings_time_slot_id`
+        FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`),
+    CONSTRAINT `uk_bookings_date_pitch_slot`
+        UNIQUE (`booking_date`, `pitch_id`, `time_slot_id`)
 );
 
 CREATE TABLE IF NOT EXISTS `pitch_reviews` (
@@ -127,3 +161,42 @@ CREATE TABLE IF NOT EXISTS `booking_payments` (
         FOREIGN KEY (`payer_id`) REFERENCES `users` (`id`)
 );
 
+CREATE TABLE IF NOT EXISTS `teams` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL,
+    `captain_id` INT NOT NULL,
+    `description` TEXT,
+    `reputation_score` INT DEFAULT 100,
+    `status` VARCHAR(50) NOT NULL,
+    `banned_until` DATETIME DEFAULT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_teams_captain_id`
+        FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `team_members` (
+    `team_id` BIGINT NOT NULL,
+    `user_email` VARCHAR(255) NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    PRIMARY KEY (`team_id`, `user_email`),
+    CONSTRAINT `fk_team_members_team_id`
+        FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `matches` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `venue_id` INT NOT NULL,
+    `host_team_id` BIGINT NOT NULL,
+    `guest_team_id` BIGINT,
+    `skill_level` VARCHAR(50) NOT NULL,
+    `match_time` DATETIME NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_matches_venue_id`
+        FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`),
+    CONSTRAINT `fk_matches_host_team_id`
+        FOREIGN KEY (`host_team_id`) REFERENCES `teams` (`id`),
+    CONSTRAINT `fk_matches_guest_team_id`
+        FOREIGN KEY (`guest_team_id`) REFERENCES `teams` (`id`)
+);

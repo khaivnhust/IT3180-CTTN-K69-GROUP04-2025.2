@@ -21,13 +21,18 @@ import com.kstn.group4.backend.venue.entity.Pitch;
 import com.kstn.group4.backend.venue.entity.PriceRule;
 import com.kstn.group4.backend.venue.entity.TimeSlot;
 import com.kstn.group4.backend.venue.repository.AddonServiceRepository;
+import com.kstn.group4.backend.venue.repository.PitchRepository;
 import com.kstn.group4.backend.venue.repository.PriceRuleRepository;
 import com.kstn.group4.backend.venue.repository.TimeSlotRepository;
+import com.kstn.group4.backend.activitylog.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,6 +40,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,12 +49,16 @@ import java.util.List;
 @Transactional
 public class BookingService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BookingService.class);
+
     private final BookingRepository bookingRepository;
     private final BookingServiceItemRepository bookingServiceItemRepository;
     private final UserRepository userRepository;
+    private final PitchRepository pitchRepository;
     private final PriceRuleRepository priceRuleRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final AddonServiceRepository addonServiceRepository;
+    private final ActivityLogService activityLogService;
 
     // ==================== ADMIN METHODS ====================
 
@@ -62,7 +72,7 @@ public class BookingService {
     public Page<AdminBookingSummaryResponse> searchAllBookingsForAdmin(
             LocalDate date,
             String status,
-            Integer pitchId,
+            Integer venueId,
             Pageable pageable
     ) {
         BookingStatus bookingStatus = null;
@@ -80,7 +90,7 @@ public class BookingService {
         Page<Booking> bookings = bookingRepository.searchByFilters(
                 date,
                 bookingStatus,
-                pitchId,
+                venueId,
                 pageable
         );
 
@@ -113,6 +123,24 @@ public class BookingService {
 
         try {
             BookingStatus newStatus = BookingStatus.valueOf(statusString.toUpperCase());
+            
+            // Handle pricing logic on cancellation
+            if (newStatus == BookingStatus.CANCELLED && booking.getStatus() != BookingStatus.CANCELLED) {
+                if (booking.getPricingMode() != com.kstn.group4.backend.booking.entity.PricingMode.MANUAL) {
+                    BigDecimal deposit = calculateDepositAmount(booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO);
+                    booking.setTotalPrice(deposit);
+                }
+                
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                Integer adminId = null;
+                String adminName = "System";
+                if (auth != null && auth.getPrincipal() instanceof com.kstn.group4.backend.config.security.services.UserPrincipal principal) {
+                    adminId = principal.getId();
+                    adminName = principal.getAppUsername();
+                }
+                activityLogService.log(adminId, adminName, "CANCEL_BOOKING", "BOOKING", bookingId.toString(), "Hủy đơn đặt sân", null, null);
+            }
+            
             booking.setStatus(newStatus);
             bookingRepository.save(booking);
         } catch (IllegalArgumentException e) {
@@ -121,6 +149,20 @@ public class BookingService {
                     "INVALID_BOOKING_STATUS"
             );
         }
+    }
+
+    /**
+     * Override booking price by admin.
+     * Changes pricing mode to MANUAL so future automatic recalculations ignore it.
+     */
+    @Transactional
+    public void overrideBookingPrice(Integer bookingId, BigDecimal newPrice) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt sân với ID: " + bookingId, "Booking"));
+
+        booking.setTotalPrice(newPrice);
+        booking.setPricingMode(com.kstn.group4.backend.booking.entity.PricingMode.MANUAL);
+        bookingRepository.save(booking);
     }
 
     // ==================== MAPPER METHODS (Private) ====================
@@ -145,6 +187,10 @@ public class BookingService {
                 ? booking.getPitch().getVenue().getName()
                 : "N/A";
 
+        String customerPhone = booking.getPlayer() != null && booking.getPlayer().getPhoneNumber() != null
+                ? booking.getPlayer().getPhoneNumber()
+                : "N/A";
+
         String status = booking.getStatus() != null
                 ? booking.getStatus().name()
                 : "N/A";
@@ -155,6 +201,7 @@ public class BookingService {
         return AdminBookingSummaryResponse.builder()
                 .id(booking.getId())
                 .customerName(customerName)
+                .customerPhone(customerPhone)
                 .venueName(venueName)
                 .pitchName(pitchName)
                 .bookingDate(booking.getBookingDate())
@@ -239,16 +286,16 @@ public class BookingService {
 
     /**
      * Create a new booking for a player.
-     * - Uses fixed 90-minute time slot system (predefined slots).
-     * - Locks TimeSlot row with PESSIMISTIC_WRITE to prevent double-booking race conditions.
-     * - Checks unique constraint: UNIQUE(booking_date, time_slot_id) at database level.
-     * - Calculates totalPrice from PriceRule based on slot number and weekend flag.
-     * - Uses RESERVED status for pending payment (50% deposit required).
-     * 
+     *
+     * STRATEGY (post-normalization):
+     * - TimeSlot is now global master data (11 rows, ID = slotNumber).
+     * - Pitch is fetched directly by pitchId from the request.
+     * - Lock on PITCH (PESSIMISTIC_WRITE) to prevent concurrent bookings on the same pitch.
+     * - Double-booking backed by UNIQUE(booking_date, pitch_id, time_slot_id) at DB level.
+     *
      * RACE CONDITION PREVENTION:
-     * - Pessimistic lock on TimeSlot ensures atomicity
-     * - UNIQUE(booking_date, time_slot_id) constraint prevents duplicates at DB level
-     * - Transaction isolation ensures consistency
+     * - Pessimistic lock on Pitch serializes bookings for the same pitch.
+     * - UNIQUE constraint at DB level is the ultimate safety net.
      */
     @Transactional
     public PlayerBookingResponse createBooking(Integer playerId, CreateBookingRequest request) {
@@ -259,23 +306,17 @@ public class BookingService {
             throw new BusinessException("Ngày đặt sân không được để trống", "INVALID_BOOKING_DATE");
         }
 
-        // ==================== STEP 1: Lock TimeSlot with PESSIMISTIC_WRITE ====================
-        TimeSlot timeSlot = timeSlotRepository.findByIdForUpdate(request.getTimeSlotId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca đặt sân với ID: " + request.getTimeSlotId(), "TimeSlot"));
-
-        // ==================== STEP 2: Get Pitch from TimeSlot and Validate ====================
-        Pitch pitch = timeSlot.getPitch();
-        if (pitch == null) {
-            throw new BusinessException("Ca đặt sân chưa được gán vào sân", "TIMESLOT_NOT_ASSOCIATED_WITH_PITCH");
-        }
-
-        if (!pitch.getId().equals(request.getPitchId())) {
-            throw new BusinessException("Ca đặt sân không thuộc sân đã chọn", "TIMESLOT_PITCH_MISMATCH");
-        }
+        // ==================== STEP 1: Lock Pitch with PESSIMISTIC_WRITE ====================
+        Pitch pitch = pitchRepository.findByIdForUpdate(request.getPitchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sân với ID: " + request.getPitchId(), "Pitch"));
 
         if (pitch.getVenue() == null) {
             throw new ResourceNotFoundException("Sân chưa được gán vào cụm sân", "Venue");
         }
+
+        // ==================== STEP 2: Fetch Global TimeSlot ====================
+        TimeSlot timeSlot = timeSlotRepository.findById(request.getTimeSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca đặt sân với ID: " + request.getTimeSlotId(), "TimeSlot"));
 
         // ==================== STEP 3: Validate Operating Hours ====================
         if (timeSlot.getStartTime().isBefore(pitch.getVenue().getOpenTime())
@@ -283,26 +324,47 @@ public class BookingService {
             throw new BusinessException("Nằm ngoài giờ mở cửa của sân", "OUT_OF_OPERATING_HOURS");
         }
 
-        // ==================== STEP 4: Check Slot Not Already Booked (UNIQUE Constraint) ====================
-        // This check is backed by UNIQUE(booking_date, time_slot_id) at DB level
-        boolean alreadyBooked = bookingRepository.existsByTimeSlotIdAndBookingDate(
+        // ==================== STEP 4: Check Slot Not Already Booked ====================
+        // Backed by UNIQUE(booking_date, pitch_id, time_slot_id) at DB level
+        boolean alreadyBooked = bookingRepository.existsByPitchIdAndTimeSlotIdAndBookingDate(
+                pitch.getId(),
                 request.getTimeSlotId(),
                 request.getBookingDate()
         );
 
         if (alreadyBooked) {
+            LOGGER.warn(
+                    "BOOKING_RACE status=FAILED reason=ALREADY_BOOKED playerId={} pitchId={} timeSlotId={} bookingDate={}",
+                    playerId,
+                    request.getPitchId(),
+                    request.getTimeSlotId(),
+                    request.getBookingDate()
+            );
             throw new ResourceConflictException("Ca đặt sân này đã được đặt. Vui lòng chọn ca khác");
         }
 
         // ==================== STEP 5: Lookup Pricing ====================
         boolean isWeekend = isWeekend(request.getBookingDate());
-        BigDecimal fieldPrice = priceRuleRepository
+        
+        // Golden hours: 17:00 to 22:00
+        LocalTime startTime = timeSlot.getStartTime();
+        boolean isGoldenHour = !startTime.isBefore(LocalTime.of(17, 0)) && startTime.isBefore(LocalTime.of(22, 0));
+        
+        BigDecimal coefficient = priceRuleRepository
                 .findByPitchIdAndSlotNumberAndIsWeekend(pitch.getId(), timeSlot.getSlotNumber(), isWeekend)
-                .map(PriceRule::getPrice)
-                .orElseGet(pitch::getBasePrice);
-        if (fieldPrice == null) {
-            throw new BusinessException("Chua co gia cho ca nay", "PRICE_NOT_SET");
+                .map(PriceRule::getCoefficient)
+                .orElseGet(() -> {
+                    BigDecimal coeff = BigDecimal.ONE;
+                    if (isWeekend) coeff = coeff.add(new BigDecimal("0.2"));
+                    if (isGoldenHour) coeff = coeff.add(new BigDecimal("0.3"));
+                    return coeff;
+                });
+        
+        if (pitch.getBasePrice() == null) {
+            throw new BusinessException("Chưa có giá cơ bản cho sân này", "BASE_PRICE_NOT_SET");
         }
+        
+        BigDecimal fieldPrice = pitch.getBasePrice().multiply(coefficient).setScale(2, RoundingMode.HALF_UP);
 
         List<BookingServiceItem> serviceItems = buildServiceItems(request, pitch);
         BigDecimal servicesTotal = serviceItems.stream()
@@ -316,20 +378,31 @@ public class BookingService {
         Booking booking = new Booking();
         booking.setPlayer(player);
         booking.setPitch(pitch);
-        booking.setTimeSlot(timeSlot);  // NEW: Direct reference to TimeSlot
+        booking.setTimeSlot(timeSlot);
         booking.setBookingDate(request.getBookingDate());
-        booking.setStartTime(timeSlot.getStartTime());  // Copy for backward compatibility
-        booking.setEndTime(timeSlot.getEndTime());      // Copy for backward compatibility
+        booking.setStartTime(timeSlot.getStartTime());
+        booking.setEndTime(timeSlot.getEndTime());
         booking.setStatus(BookingStatus.RESERVED);
         booking.setTotalPrice(totalPrice);
 
-        Booking savedBooking = bookingRepository.save(booking);
-        for (BookingServiceItem serviceItem : serviceItems) {
-            serviceItem.setBooking(savedBooking);
-        }
-        bookingServiceItemRepository.saveAll(serviceItems);
+        try {
+            Booking savedBooking = bookingRepository.save(booking);
+            for (BookingServiceItem serviceItem : serviceItems) {
+                serviceItem.setBooking(savedBooking);
+            }
+            bookingServiceItemRepository.saveAll(serviceItems);
 
-        return toPlayerBookingResponse(savedBooking, depositAmount);
+            return toPlayerBookingResponse(savedBooking, depositAmount);
+        } catch (DataIntegrityViolationException ex) {
+            LOGGER.warn(
+                    "BOOKING_RACE status=FAILED reason=UNIQUE_CONSTRAINT playerId={} pitchId={} timeSlotId={} bookingDate={}",
+                    playerId,
+                    request.getPitchId(),
+                    request.getTimeSlotId(),
+                    request.getBookingDate()
+            );
+            throw new ResourceConflictException("Ca đặt sân này đã được đặt. Vui lòng chọn ca khác");
+        }
     }
 
     /**
@@ -354,6 +427,11 @@ public class BookingService {
 
         if (booking.getStatus() != BookingStatus.RESERVED) {
             throw new BusinessException("Chỉ có thể hủy đơn ở trạng thái PENDING/BOOKED", "INVALID_CANCELLATION_STATE");
+        }
+
+        if (booking.getPricingMode() != com.kstn.group4.backend.booking.entity.PricingMode.MANUAL) {
+            BigDecimal deposit = calculateDepositAmount(booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO);
+            booking.setTotalPrice(deposit);
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
@@ -466,5 +544,45 @@ public class BookingService {
 
     private BigDecimal calculateDepositAmount(BigDecimal totalPrice) {
         return totalPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    @Transactional
+    public Booking createMatchAutoBooking(Integer playerId, Integer pitchId, Integer timeSlotId, LocalDate bookingDate) {
+        User player = userRepository.findById(playerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "User"));
+        Pitch pitch = pitchRepository.findByIdForUpdate(pitchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sân", "Pitch"));
+        TimeSlot timeSlot = timeSlotRepository.findById(timeSlotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca", "TimeSlot"));
+
+        // Tận dụng logic tính toán hệ số giá (Weekend, Golden Hour) có sẵn
+        boolean isWeekend = isWeekend(bookingDate);
+        LocalTime startTime = timeSlot.getStartTime();
+        boolean isGoldenHour = !startTime.isBefore(LocalTime.of(17, 0)) && startTime.isBefore(LocalTime.of(22, 0));
+        
+        BigDecimal coefficient = priceRuleRepository
+                .findByPitchIdAndSlotNumberAndIsWeekend(pitch.getId(), timeSlot.getSlotNumber(), isWeekend)
+                .map(PriceRule::getCoefficient)
+                .orElseGet(() -> {
+                    BigDecimal coeff = BigDecimal.ONE;
+                    if (isWeekend) coeff = coeff.add(new BigDecimal("0.2"));
+                    if (isGoldenHour) coeff = coeff.add(new BigDecimal("0.3"));
+                    return coeff;
+                });
+
+        BigDecimal totalPrice = pitch.getBasePrice().multiply(coefficient).setScale(2, RoundingMode.HALF_UP);
+
+        Booking booking = new Booking();
+        booking.setPlayer(player);
+        booking.setPitch(pitch);
+        booking.setTimeSlot(timeSlot);
+        booking.setBookingDate(bookingDate);
+        booking.setStartTime(timeSlot.getStartTime());
+        booking.setEndTime(timeSlot.getEndTime());
+        booking.setStatus(BookingStatus.CONFIRMED); // Ép trạng thái CONFIRMED (luồng mock)
+        booking.setBookingType("MATCH_AUTO");
+        booking.setTotalPrice(totalPrice); // Lưu đúng tổng tiền tính được từ CSDL!
+
+        return bookingRepository.save(booking);
     }
 }

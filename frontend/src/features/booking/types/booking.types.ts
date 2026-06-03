@@ -2,12 +2,14 @@ export type SlotStatus = "AVAILABLE" | "BOOKED" | "MAINTENANCE";
 
 export interface ScheduleSlotDto {
   timeSlotId: number;
+  slotNumber: number;
   startTime: string;
   endTime: string;
   status: SlotStatus;
   customerName: string | null;
   customerPhone: string | null;
   depositAmount: number | null;
+  price: number | null;
 }
 
 export interface PitchScheduleDto {
@@ -23,6 +25,7 @@ export interface ScheduleSlot {
   phone?: string;
   deposit?: string;
   timeSlotId?: number;
+  price?: number | null;
 }
 
 export interface FieldScheduleRow {

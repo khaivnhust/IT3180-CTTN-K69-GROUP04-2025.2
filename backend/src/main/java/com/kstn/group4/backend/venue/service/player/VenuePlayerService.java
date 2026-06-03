@@ -87,7 +87,7 @@ public class VenuePlayerService {
         Pitch pitch = pitchRepository.findById(pitchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sân với ID: " + pitchId, "Pitch"));
 
-        List<TimeSlot> timeSlots = timeSlotRepository.findByPitchIdOrderBySlotNumberAsc(pitchId);
+        List<TimeSlot> timeSlots = timeSlotRepository.findAllActiveOrderBySlotNumberAsc();
         List<Booking> bookings = bookingRepository.findConfirmedByPitchIdAndBookingDate(pitchId, date);
         List<PriceRule> priceRules = pitch.getPriceRules() == null ? List.of() : pitch.getPriceRules();
 
@@ -162,7 +162,7 @@ public class VenuePlayerService {
      */
     private List<SlotStatus> buildSlotStatuses(Pitch pitch, Map<Integer, Booking> slotBookingMap, boolean weekend) {
         List<PriceRule> priceRules = pitch.getPriceRules() == null ? List.of() : pitch.getPriceRules();
-        List<TimeSlot> timeSlots = pitch.getTimeSlots() == null ? List.of() : pitch.getTimeSlots();
+        List<TimeSlot> timeSlots = timeSlotRepository.findAllActiveOrderBySlotNumberAsc();
 
         return timeSlots.stream()
                 .filter(timeSlot -> timeSlot.getIsActive() == null || timeSlot.getIsActive())
@@ -244,11 +244,12 @@ public class VenuePlayerService {
             boolean weekend,
             BigDecimal basePrice
     ) {
-        return priceRules.stream()
+        BigDecimal coefficient = priceRules.stream()
                 .filter(rule -> slotNumber.equals(rule.getSlotNumber()) && weekend == Boolean.TRUE.equals(rule.getIsWeekend()))
-                .map(PriceRule::getPrice)
+                .map(PriceRule::getCoefficient)
                 .findFirst()
-                .orElse(basePrice);
+                .orElse(BigDecimal.ONE);
+        return basePrice != null ? basePrice.multiply(coefficient) : BigDecimal.ZERO;
     }
 
 

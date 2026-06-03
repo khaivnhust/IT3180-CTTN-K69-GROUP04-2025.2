@@ -57,6 +57,7 @@ export function useFieldSchedule() {
                   ? formatMoney(slotData.depositAmount) 
                   : undefined,
                 timeSlotId: slotData.timeSlotId,
+                price: slotData.price,
               };
             }
           });
