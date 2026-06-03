@@ -7,6 +7,8 @@ public record VenueResponseDTO(
         String name,
         String address,
         String imageUrl,
-        BigDecimal minPrice
+        BigDecimal minPrice,
+        Double latitude,
+        Double longitude
 ) {
 }

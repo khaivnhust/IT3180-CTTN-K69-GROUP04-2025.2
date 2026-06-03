@@ -7,12 +7,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ==========================================
 DELETE FROM `activity_logs`;
 DELETE FROM `booking_payments`;
-<<<<<<< HEAD
 
 DELETE FROM `booking_services`;
 
-=======
->>>>>>> origin/dev
 DELETE FROM `pitch_reviews`;
 DELETE FROM `bookings`;
 DELETE FROM `time_slots`;
@@ -109,10 +106,8 @@ VALUES
     (5, 8, 0, 1.00), (5, 8, 1, 1.20),
     (5, 9, 0, 1.00), (5, 9, 1, 1.20);
 
-<<<<<<< HEAD
 -- =========================
 -- 5. SERVICES
--- =========================
 -- =========================
 INSERT INTO
     `services` (`venue_id`, `pitch_id`, `name`, `description`, `price`, `unit`, `status`)
@@ -120,16 +115,6 @@ VALUES
     (1, NULL, 'Nuoc khoang', 'Nuoc uong dong chai', 10000.00, 'chai', 'ACTIVE'),
     (1, NULL, 'Thue ao bib', 'Ao bib phan doi', 25000.00, 'bo', 'ACTIVE'),
     (1, NULL, 'Bong thi dau', 'Bong tieu chuan san 5/7/11', 150000.00, 'qua', 'ACTIVE');
-=======
--- ==========================================
--- 6. SERVICES
--- ==========================================
-INSERT INTO `services` (`pitch_id`, `name`, `price`, `unit`)
-VALUES
-    (1, 'Nước khoáng', 10000.00, 'chai'),
-    (2, 'Thuê áo bib', 25000.00, 'bộ'),
-    (3, 'Bóng thi đấu', 150000.00, 'quả');
->>>>>>> origin/dev
 
 -- ==========================================
 -- 7. TEAMS & TEAM MEMBERS

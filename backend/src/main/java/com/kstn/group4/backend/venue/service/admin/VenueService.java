@@ -198,6 +198,8 @@ public class VenueService {
                 venue.getManagerId(),
                 venue.getOpenTime(),
                 venue.getCloseTime(),
+                venue.getLatitude(),
+                venue.getLongitude(),
                 pitches
         );
     }
