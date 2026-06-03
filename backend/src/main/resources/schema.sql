@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS `venues` (
     `manager_id` INT NOT NULL,
     `open_time` TIME NOT NULL,
     `close_time` TIME NOT NULL,
+    `latitude` DOUBLE,
+    `longitude` DOUBLE,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_venues_manager_id`
         FOREIGN KEY (`manager_id`) REFERENCES `users` (`id`)

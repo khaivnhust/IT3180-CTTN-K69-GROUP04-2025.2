@@ -32,6 +32,21 @@ public class VenuePlayerController {
 		return ResponseEntity.ok(venuePlayerService.getActiveVenues(pageable));
 	}
 
+	@GetMapping("/search/location")
+	public ResponseEntity<Page<VenueResponseDTO>> searchVenuesByLocation(
+			@RequestParam(required = false) Double lat,
+			@RequestParam(required = false) Double lng,
+			@RequestParam(required = false, defaultValue = "5.0") Double radius,
+			@RequestParam(required = false) Double minLat,
+			@RequestParam(required = false) Double maxLat,
+			@RequestParam(required = false) Double minLng,
+			@RequestParam(required = false) Double maxLng,
+			Pageable pageable
+	) {
+		return ResponseEntity.ok(venuePlayerService.searchVenuesByLocation(
+				lat, lng, radius, minLat, maxLat, minLng, maxLng, pageable));
+	}
+
 	@GetMapping("/{id}/availability")
 	public ResponseEntity<VenueAvailabilityResponse> getAvailability(
 			@PathVariable Integer id,

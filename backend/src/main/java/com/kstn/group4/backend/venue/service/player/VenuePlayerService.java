@@ -48,6 +48,22 @@ public class VenuePlayerService {
                 .map(this::toVenueResponseDTO);
     }
 
+    public Page<VenueResponseDTO> searchVenuesByLocation(
+            Double lat, Double lng, Double radius,
+            Double minLat, Double maxLat, Double minLng, Double maxLng,
+            Pageable pageable
+    ) {
+        if (minLat != null && maxLat != null && minLng != null && maxLng != null) {
+            return venueRepository.findVenuesInBoundingBox(minLat, maxLat, minLng, maxLng, pageable)
+                    .map(this::toVenueResponseDTO);
+        } else if (lat != null && lng != null) {
+            Double searchRadius = (radius != null) ? radius : 5.0;
+            return venueRepository.findVenuesWithinRadius(lat, lng, searchRadius, pageable)
+                    .map(this::toVenueResponseDTO);
+        }
+        return getActiveVenues(pageable);
+    }
+
     public VenueAvailabilityResponse getAvailability(Integer venueId, LocalDate date) {
         Venue venue = venueRepository.findById(venueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cụm sân với ID: " + venueId, "Venue"));
@@ -271,7 +287,9 @@ public class VenuePlayerService {
                 venue.getName(),
                 venue.getAddress(),
                 venue.getImageUrl(),
-                minPrice
+                minPrice,
+                venue.getLatitude(),
+                venue.getLongitude()
         );
     }
 }
