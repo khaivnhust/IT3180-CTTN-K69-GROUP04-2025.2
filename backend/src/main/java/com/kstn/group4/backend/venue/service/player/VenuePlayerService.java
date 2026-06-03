@@ -1,18 +1,22 @@
 package com.kstn.group4.backend.venue.service.player;
 
 import com.kstn.group4.backend.booking.entity.Booking;
+import com.kstn.group4.backend.booking.entity.BookingStatus;
 import com.kstn.group4.backend.booking.repository.BookingRepository;
 import com.kstn.group4.backend.exception.ResourceNotFoundException;
+import com.kstn.group4.backend.venue.dto.ServiceItemResponse;
 import com.kstn.group4.backend.venue.dto.player.PitchAvailability;
 import com.kstn.group4.backend.venue.dto.player.PitchSlotsResponse;
 import com.kstn.group4.backend.venue.dto.player.SlotDetailResponse;
 import com.kstn.group4.backend.venue.dto.player.SlotStatus;
 import com.kstn.group4.backend.venue.dto.player.VenueAvailabilityResponse;
 import com.kstn.group4.backend.venue.dto.player.VenueResponseDTO;
+import com.kstn.group4.backend.venue.entity.AddonService;
 import com.kstn.group4.backend.venue.entity.Pitch;
 import com.kstn.group4.backend.venue.entity.PriceRule;
 import com.kstn.group4.backend.venue.entity.TimeSlot;
 import com.kstn.group4.backend.venue.entity.Venue;
+import com.kstn.group4.backend.venue.repository.AddonServiceRepository;
 import com.kstn.group4.backend.venue.repository.PitchRepository;
 import com.kstn.group4.backend.venue.repository.TimeSlotRepository;
 import com.kstn.group4.backend.venue.repository.VenueRepository;
@@ -37,6 +41,7 @@ public class VenuePlayerService {
     private final PitchRepository pitchRepository;
     private final BookingRepository bookingRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final AddonServiceRepository addonServiceRepository;
 
     public Page<VenueResponseDTO> getActiveVenues(Pageable pageable) {
         return venueRepository.findActiveVenuesForPlayer(pageable)
@@ -102,7 +107,8 @@ public class VenuePlayerService {
                 .filter(timeSlot -> timeSlot.getIsActive() == null || timeSlot.getIsActive())
                 .map(timeSlot -> {
                     Booking booking = slotBookingMap.get(timeSlot.getId());
-                    boolean isAvailable = booking == null;
+                    String status = resolveSlotStatus(booking);
+                    boolean isAvailable = "AVAILABLE".equals(status);
 
                     // Apply filter
                     if ("available".equals(filterLower) && !isAvailable) {
@@ -120,7 +126,7 @@ public class VenuePlayerService {
                             timeSlot.getStartTime(),
                             timeSlot.getEndTime(),
                             price,
-                            isAvailable
+                            status
                     );
                 })
                 .filter(slot -> slot != null)
@@ -133,6 +139,16 @@ public class VenuePlayerService {
                 isWeekend,
                 slots
         );
+    }
+
+    public List<ServiceItemResponse> getActiveServices(Integer venueId) {
+        if (!venueRepository.existsById(venueId)) {
+            throw new ResourceNotFoundException("Khong tim thay cum san voi ID: " + venueId, "Venue");
+        }
+
+        return addonServiceRepository.findActiveByVenueIdIncludingPitch(venueId, "ACTIVE").stream()
+                .map(this::toServiceResponse)
+                .toList();
     }
 
     /**
@@ -152,7 +168,7 @@ public class VenuePlayerService {
                 .filter(timeSlot -> timeSlot.getIsActive() == null || timeSlot.getIsActive())
                 .map(timeSlot -> {
                     Booking booking = slotBookingMap.get(timeSlot.getId());
-                    String status = booking != null ? "BOOKED" : "AVAILABLE";
+                    String status = resolveSlotStatus(booking);
                     BigDecimal price = findPrice(priceRules, timeSlot.getSlotNumber(), weekend, pitch.getBasePrice());
 
                     return new SlotStatus(
@@ -188,6 +204,38 @@ public class VenuePlayerService {
                     .put(booking.getTimeSlot().getId(), booking);
         }
         return lookup;
+    }
+
+    private String resolveSlotStatus(Booking booking) {
+        if (booking == null) {
+            return "AVAILABLE";
+        }
+        if (booking.getStatus() == BookingStatus.PENDING || booking.getStatus() == BookingStatus.RESERVED) {
+            return "PENDING";
+        }
+        return "BOOKED";
+    }
+
+    private ServiceItemResponse toServiceResponse(AddonService service) {
+        return new ServiceItemResponse(
+                service.getId(),
+                resolveServiceVenueId(service),
+                service.getName(),
+                service.getDescription(),
+                service.getPrice(),
+                service.getUnit(),
+                service.getStatus()
+        );
+    }
+
+    private Integer resolveServiceVenueId(AddonService service) {
+        if (service.getVenue() != null) {
+            return service.getVenue().getId();
+        }
+        if (service.getPitch() != null && service.getPitch().getVenue() != null) {
+            return service.getPitch().getVenue().getId();
+        }
+        return null;
     }
 
     private BigDecimal findPrice(

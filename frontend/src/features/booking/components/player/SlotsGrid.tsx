@@ -18,7 +18,7 @@ export function SlotsGrid({ slots, onSlotToggle }: SlotsGridProps) {
   if (!slots.length) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
-        Khong co khung gio nao.
+        Không có khung giờ nào.
       </div>
     );
   }
@@ -30,6 +30,7 @@ export function SlotsGrid({ slots, onSlotToggle }: SlotsGridProps) {
           key={`${item.slot.startTime}-${item.slot.endTime}`}
           slot={item.slot}
           status={item.status}
+          price={item.price}
           onToggle={onSlotToggle}
         />
       ))}

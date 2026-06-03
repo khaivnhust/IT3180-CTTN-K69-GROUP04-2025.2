@@ -1,5 +1,6 @@
-package com.kstn.group4.backend.venue.entity;
+package com.kstn.group4.backend.booking.entity;
 
+import com.kstn.group4.backend.venue.entity.AddonService;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,33 +17,24 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "services")
-public class AddonService {
+@Table(name = "booking_services")
+public class BookingServiceItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pitch_id")
-    private Pitch pitch;
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "venue_id")
-    private Venue venue;
+    @JoinColumn(name = "service_id", nullable = false)
+    private AddonService service;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "quantity", nullable = false)
+    private Integer quantity;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "price")
-    private BigDecimal price;
-
-    @Column(name = "unit")
-    private String unit;
-
-    @Column(name = "status")
-    private String status = "ACTIVE";
+    @Column(name = "price_at_booking", nullable = false)
+    private BigDecimal priceAtBooking;
 }
