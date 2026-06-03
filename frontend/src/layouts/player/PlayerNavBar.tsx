@@ -9,7 +9,12 @@ export function PlayerNavBar() {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuthContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasAvatarError, setHasAvatarError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setHasAvatarError(false);
+  }, [user?.avatar]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -58,8 +63,8 @@ export function PlayerNavBar() {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`transition ${location.pathname === item.path
-                  ? "text-[#84e30f]"
-                  : "text-white hover:text-white/75"
+                ? "text-[#84e30f]"
+                : "text-white hover:text-white/75"
                 }`}
             >
               {item.label}
@@ -79,11 +84,12 @@ export function PlayerNavBar() {
                 className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none"
                 aria-label="Menu tài khoản"
               >
-                {user.avatar ? (
+                {user.avatar && !hasAvatarError ? (
                   <img
                     src={user.avatar}
                     alt={user.username || "Avatar"}
                     className="h-full w-full object-cover"
+                    onError={() => setHasAvatarError(true)}
                   />
                 ) : (
                   <CircleUserRound size={22} />
