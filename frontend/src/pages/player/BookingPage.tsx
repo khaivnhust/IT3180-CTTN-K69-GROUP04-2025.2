@@ -1,9 +1,11 @@
-import { Search } from "lucide-react";
-import { VenueCard, VenueSkeleton, useVenueList } from "../../features/venue";
+import { useState } from "react";
+import { Search, Map as MapIcon, Grid } from "lucide-react";
+import { VenueCard, VenueSkeleton, useVenueList, MapSearch } from "../../features/venue";
 import { PlayerNavBar } from "../../layouts/player/PlayerNavBar";
 
 export function BookingPage() {
   const { venues, isLoading, error } = useVenueList();
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#005E2E] to-[#29721D]">
@@ -34,6 +36,22 @@ export function BookingPage() {
           >
             Ngày đặt sân
           </button>
+          <div className="flex bg-white/10 rounded-full border border-white/30 p-1 backdrop-blur">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-full transition ${viewMode === "grid" ? "bg-white text-[#005E2E]" : "text-white hover:bg-white/20"}`}
+              title="Dạng lưới"
+            >
+              <Grid size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              className={`p-1.5 rounded-full transition ${viewMode === "map" ? "bg-white text-[#005E2E]" : "text-white hover:bg-white/20"}`}
+              title="Bản đồ"
+            >
+              <MapIcon size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -70,6 +88,8 @@ export function BookingPage() {
               Hiện tại hệ thống chưa có cụm sân nào hoạt động. Vui lòng quay lại sau.
             </p>
           </div>
+        ) : viewMode === "map" ? (
+          <MapSearch venues={venues} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {venues.map((venue) => (
