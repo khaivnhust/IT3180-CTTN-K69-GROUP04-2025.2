@@ -1,10 +1,12 @@
 package com.kstn.group4.backend.venue.controller;
 
+import com.kstn.group4.backend.venue.dto.ServiceItemResponse;
 import com.kstn.group4.backend.venue.dto.player.PitchSlotsResponse;
 import com.kstn.group4.backend.venue.dto.player.VenueAvailabilityResponse;
 import com.kstn.group4.backend.venue.dto.player.VenueResponseDTO;
 import com.kstn.group4.backend.venue.service.player.VenuePlayerService;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +39,20 @@ public class VenuePlayerController {
 	) {
 		LocalDate targetDate = date != null ? date : LocalDate.now();
 		return ResponseEntity.ok(venuePlayerService.getAvailability(id, targetDate));
+	}
+
+	@GetMapping("/{id}/slots")
+	public ResponseEntity<VenueAvailabilityResponse> getVenueSlots(
+			@PathVariable Integer id,
+			@RequestParam(required = false) LocalDate date
+	) {
+		LocalDate targetDate = date != null ? date : LocalDate.now();
+		return ResponseEntity.ok(venuePlayerService.getAvailability(id, targetDate));
+	}
+
+	@GetMapping("/{id}/services")
+	public ResponseEntity<List<ServiceItemResponse>> getActiveServices(@PathVariable Integer id) {
+		return ResponseEntity.ok(venuePlayerService.getActiveServices(id));
 	}
 
 	/**

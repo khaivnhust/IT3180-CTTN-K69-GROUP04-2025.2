@@ -6,17 +6,21 @@ import com.kstn.group4.backend.booking.dto.admin.AdminUpdateBookingRequest;
 import com.kstn.group4.backend.booking.dto.player.CreateBookingRequest;
 import com.kstn.group4.backend.booking.dto.player.PlayerBookingResponse;
 import com.kstn.group4.backend.booking.entity.Booking;
+import com.kstn.group4.backend.booking.entity.BookingServiceItem;
 import com.kstn.group4.backend.booking.entity.BookingStatus;
 import com.kstn.group4.backend.booking.repository.BookingRepository;
+import com.kstn.group4.backend.booking.repository.BookingServiceItemRepository;
 import com.kstn.group4.backend.exception.BusinessException;
 import com.kstn.group4.backend.exception.ForbiddenException;
 import com.kstn.group4.backend.exception.ResourceConflictException;
 import com.kstn.group4.backend.exception.ResourceNotFoundException;
 import com.kstn.group4.backend.user.entity.User;
 import com.kstn.group4.backend.user.repository.UserRepository;
+import com.kstn.group4.backend.venue.entity.AddonService;
 import com.kstn.group4.backend.venue.entity.Pitch;
 import com.kstn.group4.backend.venue.entity.PriceRule;
 import com.kstn.group4.backend.venue.entity.TimeSlot;
+import com.kstn.group4.backend.venue.repository.AddonServiceRepository;
 import com.kstn.group4.backend.venue.repository.PriceRuleRepository;
 import com.kstn.group4.backend.venue.repository.TimeSlotRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,9 +44,11 @@ import java.util.List;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final BookingServiceItemRepository bookingServiceItemRepository;
     private final UserRepository userRepository;
     private final PriceRuleRepository priceRuleRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final AddonServiceRepository addonServiceRepository;
 
     // ==================== ADMIN METHODS ====================
 
@@ -200,7 +206,13 @@ public class BookingService {
         String adminNote = null;
         String paymentStatus = "UNPAID";
 
-        List<AdminBookingDetailResponse.AddonServiceItem> addOns = new ArrayList<>();
+        List<AdminBookingDetailResponse.AddonServiceItem> addOns = bookingServiceItemRepository.findByBookingId(booking.getId()).stream()
+                .map(item -> new AdminBookingDetailResponse.AddonServiceItem(
+                        item.getService() != null ? item.getService().getName() : "N/A",
+                        item.getQuantity(),
+                        item.getPriceAtBooking()
+                ))
+                .toList();
 
         return AdminBookingDetailResponse.builder()
                 .id(booking.getId())
@@ -284,13 +296,19 @@ public class BookingService {
 
         // ==================== STEP 5: Lookup Pricing ====================
         boolean isWeekend = isWeekend(request.getBookingDate());
-        BigDecimal totalPrice = priceRuleRepository
+        BigDecimal fieldPrice = priceRuleRepository
                 .findByPitchIdAndSlotNumberAndIsWeekend(pitch.getId(), timeSlot.getSlotNumber(), isWeekend)
                 .map(PriceRule::getPrice)
                 .orElseGet(pitch::getBasePrice);
-        if (totalPrice == null) {
+        if (fieldPrice == null) {
             throw new BusinessException("Chua co gia cho ca nay", "PRICE_NOT_SET");
         }
+
+        List<BookingServiceItem> serviceItems = buildServiceItems(request, pitch);
+        BigDecimal servicesTotal = serviceItems.stream()
+                .map(item -> item.getPriceAtBooking().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalPrice = fieldPrice.add(servicesTotal);
 
         BigDecimal depositAmount = calculateDepositAmount(totalPrice);
 
@@ -306,6 +324,11 @@ public class BookingService {
         booking.setTotalPrice(totalPrice);
 
         Booking savedBooking = bookingRepository.save(booking);
+        for (BookingServiceItem serviceItem : serviceItems) {
+            serviceItem.setBooking(savedBooking);
+        }
+        bookingServiceItemRepository.saveAll(serviceItems);
+
         return toPlayerBookingResponse(savedBooking, depositAmount);
     }
 
@@ -388,6 +411,52 @@ public class BookingService {
                 depositAmount,
                 status
         );
+    }
+
+    private List<BookingServiceItem> buildServiceItems(CreateBookingRequest request, Pitch pitch) {
+        if (request.getServices() == null || request.getServices().isEmpty()) {
+            return List.of();
+        }
+
+        List<BookingServiceItem> items = new ArrayList<>();
+        for (CreateBookingRequest.ServiceRequest serviceRequest : request.getServices()) {
+            if (serviceRequest.getQuantity() == null || serviceRequest.getQuantity() <= 0) {
+                throw new BusinessException("So luong dich vu phai lon hon 0", "INVALID_SERVICE_QUANTITY");
+            }
+
+            AddonService service = addonServiceRepository.findById(serviceRequest.getServiceId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay dich vu voi ID: " + serviceRequest.getServiceId(), "Service"));
+
+            if (!isServiceAvailableForPitch(service, pitch)) {
+                throw new BusinessException("Dich vu khong thuoc cum san da chon", "SERVICE_VENUE_MISMATCH");
+            }
+            if (service.getPrice() == null) {
+                throw new BusinessException("Dich vu chua co gia", "SERVICE_PRICE_NOT_SET");
+            }
+            if (service.getStatus() != null && !"ACTIVE".equalsIgnoreCase(service.getStatus())) {
+                throw new BusinessException("Dich vu khong con kinh doanh", "SERVICE_NOT_ACTIVE");
+            }
+
+            BookingServiceItem item = new BookingServiceItem();
+            item.setService(service);
+            item.setQuantity(serviceRequest.getQuantity());
+            item.setPriceAtBooking(service.getPrice());
+            items.add(item);
+        }
+        return items;
+    }
+
+    private boolean isServiceAvailableForPitch(AddonService service, Pitch pitch) {
+        Integer pitchVenueId = pitch.getVenue() != null ? pitch.getVenue().getId() : null;
+        if (pitchVenueId == null) {
+            return false;
+        }
+        if (service.getVenue() != null && pitchVenueId.equals(service.getVenue().getId())) {
+            return true;
+        }
+        return service.getPitch() != null
+                && service.getPitch().getVenue() != null
+                && pitchVenueId.equals(service.getPitch().getVenue().getId());
     }
 
     private boolean isWeekend(LocalDate date) {
