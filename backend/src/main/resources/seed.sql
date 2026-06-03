@@ -6,6 +6,8 @@ SET
 -- =========================
 DELETE FROM `booking_payments`;
 
+DELETE FROM `booking_services`;
+
 DELETE FROM `pitch_reviews`;
 
 DELETE FROM `bookings`;
@@ -40,6 +42,8 @@ ALTER TABLE `bookings` AUTO_INCREMENT = 1;
 ALTER TABLE `pitch_reviews` AUTO_INCREMENT = 1;
 
 ALTER TABLE `booking_payments` AUTO_INCREMENT = 1;
+
+ALTER TABLE `booking_services` AUTO_INCREMENT = 1;
 
 -- =========================
 -- 1. USERS (3 users: 1 ADMIN, 2 PLAYERS)
@@ -231,11 +235,11 @@ VALUES
 -- =========================
 -- =========================
 INSERT INTO
-    `services` (`pitch_id`, `name`, `price`, `unit`)
+    `services` (`venue_id`, `pitch_id`, `name`, `description`, `price`, `unit`, `status`)
 VALUES
-    (1, 'Nuoc khoang', 10000.00, 'chai'),
-    (2, 'Thue ao bib', 25000.00, 'bo'),
-    (3, 'Bong thi dau', 150000.00, 'qua');
+    (1, NULL, 'Nuoc khoang', 'Nuoc uong dong chai', 10000.00, 'chai', 'ACTIVE'),
+    (1, NULL, 'Thue ao bib', 'Ao bib phan doi', 25000.00, 'bo', 'ACTIVE'),
+    (1, NULL, 'Bong thi dau', 'Bong tieu chuan san 5/7/11', 150000.00, 'qua', 'ACTIVE');
 
 -- =========================
 -- 6. BOOKINGS (DISABLED FOR TEST COMPATIBILITY)

@@ -66,11 +66,16 @@ CREATE TABLE IF NOT EXISTS `price_rules` (
 
 CREATE TABLE IF NOT EXISTS `services` (
     `id` INT NOT NULL AUTO_INCREMENT,
+    `venue_id` INT,
     `pitch_id` INT,
     `name` VARCHAR(255),
+    `description` TEXT,
     `price` DECIMAL(38,2),
     `unit` VARCHAR(255),
+    `status` VARCHAR(50) DEFAULT 'ACTIVE',
     PRIMARY KEY (`id`),
+    CONSTRAINT `fk_services_venue_id`
+        FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`),
     CONSTRAINT `fk_services_pitch_id`
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`)
 );
@@ -110,6 +115,19 @@ CREATE TABLE IF NOT EXISTS `pitch_reviews` (
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
     CONSTRAINT `fk_pitch_reviews_player_id`
         FOREIGN KEY (`player_id`) REFERENCES `users` (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `booking_services` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `booking_id` INT NOT NULL,
+    `service_id` INT NOT NULL,
+    `quantity` INT NOT NULL,
+    `price_at_booking` DECIMAL(38,2) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_booking_services_booking_id`
+        FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_booking_services_service_id`
+        FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `booking_payments` (

@@ -7,6 +7,7 @@ SET NAMES 'utf8mb4';
 
 -- Clear du lieu theo thu tu khoa ngoai
 DELETE FROM `booking_payments`;
+DELETE FROM `booking_services`;
 DELETE FROM `pitch_reviews`;
 DELETE FROM `bookings`;
 DELETE FROM `services`;
@@ -45,10 +46,10 @@ INSERT INTO `price_rules` (`pitch_id`, `slot_number`, `is_weekend`, `price`) VAL
 (3, 1, b'1', 1000000.00);
 
 -- 4) Seed Services
-INSERT INTO `services` (`pitch_id`, `name`, `price`, `unit`) VALUES
-(1, 'Nuoc khoang', 10000.00, 'chai'),
-(2, 'Thue ao bib', 25000.00, 'bo'),
-(3, 'Bong thi dau', 150000.00, 'qua');
+INSERT INTO `services` (`venue_id`, `pitch_id`, `name`, `description`, `price`, `unit`, `status`) VALUES
+(1, NULL, 'Nuoc khoang', 'Nuoc uong dong chai', 10000.00, 'chai', 'ACTIVE'),
+(1, NULL, 'Thue ao bib', 'Ao bib phan doi', 25000.00, 'bo', 'ACTIVE'),
+(1, NULL, 'Bong thi dau', 'Bong tieu chuan san 5/7/11', 150000.00, 'qua', 'ACTIVE');
 
 -- 5) Seed >=10 Bookings de demo Dashboard
 -- Luu y: status theo BookingStatus enum hien tai: RESERVED, CANCELLED, PLAYING.
