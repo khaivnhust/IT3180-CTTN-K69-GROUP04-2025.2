@@ -1,13 +1,31 @@
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bell, CircleUserRound } from "lucide-react";
 import logoImage from "../../assets/images/logo-amixi.png";
+import { useAuthContext } from "../../features/auth/hooks/useAuthContext";
 
 export function PlayerNavBar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuthContext();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const navItems = [
-    { label: "Home", path: "/" },
+    { label: "Trang chủ", path: "/" },
     { label: "Đặt sân", path: "/booking" },
     { label: "Chợ kèo", path: "/match" },
     { label: "Đội bóng", path: "/team" },
@@ -39,11 +57,10 @@ export function PlayerNavBar() {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`transition ${
-                location.pathname === item.path
+              className={`transition ${location.pathname === item.path
                   ? "text-[#84e30f]"
                   : "text-white hover:text-white/75"
-              }`}
+                }`}
             >
               {item.label}
             </button>
@@ -51,21 +68,84 @@ export function PlayerNavBar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {isAuthenticated ? (
+            <div className="relative flex items-center gap-3" ref={dropdownRef}>
+              <span className="hidden text-sm font-semibold text-white sm:inline-block">
+                {user.username}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none"
+                aria-label="Menu tài khoản"
+              >
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username || "Avatar"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <CircleUserRound size={22} />
+                )}
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-12 z-50 w-48 rounded-lg border border-white/15 bg-[#005E2E] p-2 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      navigate("/profile");
+                    }}
+                    className="w-full rounded-md px-4 py-2 text-left text-sm font-medium text-white hover:bg-white/10 transition"
+                  >
+                    Hồ sơ cá nhân
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      navigate("/profile");
+                    }}
+                    className="w-full rounded-md px-4 py-2 text-left text-sm font-medium text-white hover:bg-white/10 transition"
+                  >
+                    Lịch sử đặt sân
+                  </button>
+                  <div className="my-1 border-t border-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      logout();
+                      navigate("/");
+                    }}
+                    className="w-full rounded-md px-4 py-2 text-left text-sm font-medium text-rose-300 hover:bg-rose-500/20 transition"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="inline-flex items-center rounded-md bg-[#29721D] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#225f19]"
+            >
+              Đăng nhập
+            </button>
+          )}
+
           <button
+            type="button"
             onClick={() => {
               /* TODO */
             }}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20"
+            aria-label="Thông báo"
           >
             <Bell size={18} />
-          </button>
-          <button
-            onClick={() => {
-              /* TODO */
-            }}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20"
-          >
-            <CircleUserRound size={20} />
           </button>
         </div>
       </div>
