@@ -8,6 +8,8 @@ export interface VenueResponseDTO {
   address: string;
   imageUrl: string;
   minPrice: BigDecimal | number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface VenueSummaryResponse {
@@ -17,6 +19,8 @@ export interface VenueSummaryResponse {
   openTime: string; // LocalTime as ISO string or time string (e.g., "08:00")
   closeTime: string; // LocalTime as ISO string or time string (e.g., "22:00")
   minPrice: BigDecimal | number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface VenueDetailResponse {
@@ -26,6 +30,8 @@ export interface VenueDetailResponse {
   description: string;
   openTime: string; // LocalTime
   closeTime: string; // LocalTime
+  latitude?: number;
+  longitude?: number;
 }
 
 // Admin DTOs
@@ -111,4 +117,6 @@ export interface VenueItem {
   address: string;
   openTime: string;
   minPrice?: number;
+  latitude?: number;
+  longitude?: number;
 }
