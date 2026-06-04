@@ -4,6 +4,7 @@ import { AdminLayout } from "./layouts/admin/AdminLayout.tsx";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage.tsx";
 import { FieldSchedulePage } from "./pages/admin/FieldSchedulePage";
 import { MatchmakingPage } from "./pages/admin/MatchmakingPage.tsx";
+import { LeaguePage } from "./pages/admin/LeaguePage.tsx";
 import { OrdersPage } from "./pages/admin/OrdersPage.tsx";
 import { SettingsPage } from "./pages/admin/SettingsPage";
 import { TeamsPage } from "./pages/admin/TeamsPage.tsx";
@@ -15,6 +16,7 @@ import { BookingField } from "./pages/player/BookingField.tsx";
 import { MatchPage } from "./pages/player/MatchPage.tsx";
 import { ProfilePage } from "./pages/player/ProfilePage.tsx";
 import { PlayerTeamPage } from "./pages/player/PlayerTeamPage.tsx";
+import { PlayerLeaguePage } from "./pages/player/PlayerLeaguePage.tsx";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
 
 import { AdminProtectedRoute } from "./features/auth/components/AdminProtectedRoute";
@@ -32,6 +34,7 @@ function App() {
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/match" element={<MatchPage />} />
         <Route path="/team" element={<PlayerTeamPage />} />
+        <Route path="/leagues" element={<PlayerLeaguePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
         <Route
@@ -51,6 +54,7 @@ function App() {
           />
           <Route path="schedule" element={<FieldSchedulePage />} />
           <Route path="matchmaking" element={<MatchmakingPage />} />
+          <Route path="leagues" element={<LeaguePage />} />
           <Route
             path="calendar"
             element={<Navigate to="/admin/schedule" replace />}
