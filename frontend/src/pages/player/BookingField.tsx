@@ -340,15 +340,15 @@ export function BookingField() {
               <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/5">
-                    <th className="sticky left-0 top-0 z-20 bg-[#005E2E] p-4 font-bold text-white min-w-[160px] border-r border-white/10 whitespace-nowrap">
+                    <th className="sticky left-0 top-0 z-20 bg-[#236f33] p-4 font-semibold text-emerald-100/90 min-w-[160px] border-r border-b border-white/10 whitespace-nowrap">
                       Sân / Giờ
                     </th>
                     {uniqueTimeRanges.map((range) => (
                       <th
                         key={`${range.startTime}-${range.endTime}`}
-                        className="p-4 font-bold text-white text-center min-w-[150px] border-r border-white/10 last:border-r-0 bg-[#005E2E]/80 backdrop-blur-sm whitespace-nowrap"
+                        className="p-4 font-semibold text-emerald-100/90 text-center min-w-[150px] border-r border-b border-white/10 last:border-r-0 bg-[#236f33]/90 backdrop-blur-sm whitespace-nowrap"
                       >
-                        <div className="font-bold text-white text-sm">
+                        <div className="font-semibold text-emerald-100/90 text-sm">
                           {range.startTime} - {range.endTime}
                         </div>
                       </th>
@@ -358,7 +358,7 @@ export function BookingField() {
                 <tbody className="divide-y divide-white/10">
                   {venueAvailability.pitches.map((pitchItem) => (
                     <tr key={pitchItem.pitchId} className="hover:bg-white/5 transition">
-                      <td className="sticky left-0 z-10 bg-[#005E2E] p-4 font-bold text-white border-r border-white/10 min-w-[160px] whitespace-nowrap">
+                      <td className="sticky left-0 z-10 bg-[#236f33]/95 backdrop-blur-sm p-4 font-semibold text-emerald-100/90 border-r border-b border-white/10 min-w-[160px] whitespace-nowrap">
                         <div className="text-sm font-semibold">{pitchItem.pitchName}</div>
                       </td>
 
@@ -373,31 +373,67 @@ export function BookingField() {
                           return (
                             <td
                               key={`${range.startTime}-${range.endTime}`}
-                              className="p-3 text-center text-white/20 bg-white/2 border-r border-white/10 last:border-r-0"
+                              className="p-3 text-center text-white/20 bg-white/2 border-r border-b border-white/10 last:border-r-0"
                             >
                               -
                             </td>
                           );
                         }
 
-                        const isBooked = slot.status === "BOOKED";
                         const isSelected = selectedSlots.some(
                           (sel) =>
                             sel.pitchId === pitchItem.pitchId &&
                             sel.timeSlotId === slot.timeSlotId
                         );
 
-                        return (
-                          <td
-                            key={`${range.startTime}-${range.endTime}`}
-                            className="p-3 text-center border-r border-white/10 last:border-r-0"
-                          >
-                            {isBooked ? (
+                        if (slot.status === "PENDING") {
+                          return (
+                            <td
+                              key={`${range.startTime}-${range.endTime}`}
+                              className="p-3 text-center border-r border-b border-white/10 last:border-r-0"
+                            >
+                              <div className="flex h-14 w-full flex-col justify-center rounded-md bg-amber-500/10 border border-dashed border-amber-500/30 text-amber-200/70 text-left p-3 select-none cursor-not-allowed">
+                                <span className="font-bold text-xs">Đã giữ chỗ</span>
+                                <span className="text-[10px] opacity-70 mt-0.5">Chờ xác nhận</span>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        if (slot.status === "BOOKED") {
+                          return (
+                            <td
+                              key={`${range.startTime}-${range.endTime}`}
+                              className="p-3 text-center border-r border-b border-white/10 last:border-r-0"
+                            >
                               <div className="flex h-14 w-full flex-col justify-center rounded-md bg-white/5 border border-dashed border-white/10 text-white/30 text-left p-3 select-none cursor-not-allowed">
                                 <span className="font-bold text-xs">Đã đặt</span>
                                 <span className="text-[10px] opacity-70 mt-0.5">-</span>
                               </div>
-                            ) : isSelected ? (
+                            </td>
+                          );
+                        }
+
+                        if (slot.status !== "AVAILABLE") {
+                          return (
+                            <td
+                              key={`${range.startTime}-${range.endTime}`}
+                              className="p-3 text-center border-r border-b border-white/10 last:border-r-0"
+                            >
+                              <div className="flex h-14 w-full flex-col justify-center rounded-md bg-white/5 border border-dashed border-white/10 text-white/30 text-left p-3 select-none cursor-not-allowed">
+                                <span className="font-bold text-xs">Không khả dụng</span>
+                                <span className="text-[10px] opacity-70 mt-0.5">-</span>
+                              </div>
+                            </td>
+                          );
+                        }
+
+                        return (
+                          <td
+                            key={`${range.startTime}-${range.endTime}`}
+                            className="p-3 text-center border-r border-b border-white/10 last:border-r-0"
+                          >
+                            {isSelected ? (
                               <button
                                 type="button"
                                 onClick={() => handleToggleSlot(pitchItem.pitchId, pitchItem.pitchName, slot)}
@@ -412,10 +448,10 @@ export function BookingField() {
                               <button
                                 type="button"
                                 onClick={() => handleToggleSlot(pitchItem.pitchId, pitchItem.pitchName, slot)}
-                                className="flex h-14 w-full flex-col justify-center rounded-md bg-white/5 border border-white/15 text-white text-left p-3 transition transform hover:bg-white/15 hover:border-white/30 hover:scale-[1.02] active:scale-[0.98]"
+                                className="flex h-14 w-full flex-col justify-center rounded-md bg-white/5 border border-white/10 text-white text-left p-3 transition transform hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] active:scale-[0.98]"
                               >
                                 <span className="font-bold text-xs">Trống</span>
-                                <span className="text-[11px] text-emerald-300 font-medium mt-0.5">
+                                <span className="text-[11px] text-white font-medium mt-0.5">
                                   {formatPrice(slot.price != null ? Number(slot.price) : 0)}
                                 </span>
                               </button>
