@@ -10,8 +10,14 @@ export function PlayerNavBar() {
   const location = useLocation();
   const { user, isAuthenticated, logout, checkAuth } = useAuthContext(); // GIỮ INCOMING + HOÀN TRỘN checkAuth của HEAD
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [prevAvatar, setPrevAvatar] = useState(user?.avatar);
   const [hasAvatarError, setHasAvatarError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  if (user?.avatar !== prevAvatar) {
+    setPrevAvatar(user?.avatar);
+    setHasAvatarError(false);
+  }
 
   // Gọi checkAuth khi component mount để luôn đồng bộ trạng thái từ server (Nhặt từ HEAD)
   useEffect(() => {
@@ -19,10 +25,6 @@ export function PlayerNavBar() {
       checkAuth();
     }
   }, [checkAuth]);
-
-  useEffect(() => {
-    setHasAvatarError(false);
-  }, [user?.avatar]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

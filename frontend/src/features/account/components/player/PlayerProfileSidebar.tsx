@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { PlayerProfileInfo } from "../../types/account.types";
 import { useAuthContext } from "../../../auth/hooks/useAuthContext";
 import { CircleUserRound, Camera, User, Activity, Shield, LogOut } from "lucide-react";
@@ -20,11 +20,13 @@ export function PlayerProfileSidebar({
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
   const avatarUrl = user?.avatar || userInfo.avatarUrl;
+  const [prevAvatarUrl, setPrevAvatarUrl] = useState(avatarUrl);
   const [hasAvatarError, setHasAvatarError] = useState(false);
 
-  useEffect(() => {
+  if (avatarUrl !== prevAvatarUrl) {
+    setPrevAvatarUrl(avatarUrl);
     setHasAvatarError(false);
-  }, [avatarUrl]);
+  }
 
   return (
     <div className="flex w-[240px] shrink-0 flex-col gap-5">
