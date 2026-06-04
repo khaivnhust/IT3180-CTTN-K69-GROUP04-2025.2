@@ -140,6 +140,17 @@ public class BookingService {
                 }
                 activityLogService.log(adminId, adminName, "CANCEL_BOOKING", "BOOKING", bookingId.toString(), "Hủy đơn đặt sân", null, null);
             }
+            // Log confirm booking
+            if (newStatus == BookingStatus.BOOKED && booking.getStatus() != BookingStatus.BOOKED) {
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                Integer adminId = null;
+                String adminName = "System";
+                if (auth != null && auth.getPrincipal() instanceof com.kstn.group4.backend.config.security.services.UserPrincipal principal) {
+                    adminId = principal.getId();
+                    adminName = principal.getAppUsername();
+                }
+                activityLogService.log(adminId, adminName, "CONFIRM_BOOKING", "BOOKING", bookingId.toString(), "Duyệt đơn đặt sân", null, null);
+            }
             
             booking.setStatus(newStatus);
             bookingRepository.save(booking);
