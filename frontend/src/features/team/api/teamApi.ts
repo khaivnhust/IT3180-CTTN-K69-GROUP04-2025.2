@@ -100,7 +100,10 @@ export const getMyTeam = async (): Promise<Team | null> => {
   try {
     const response = await apiClient.get<Team | null>("/teams/my-team");
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.response && error.response.status === 404) {
+      return null;
+    }
     logApiError("getMyTeam", error);
     throw error;
   }
