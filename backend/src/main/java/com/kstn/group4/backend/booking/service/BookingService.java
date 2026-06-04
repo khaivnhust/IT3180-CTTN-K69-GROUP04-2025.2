@@ -81,7 +81,7 @@ public class BookingService {
                 bookingStatus = BookingStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new BusinessException(
-                        "Trạng thái tìm kiếm không hợp lệ: " + status + ". Các trạng thái hợp lệ: RESERVED, CANCELLED, PLAYING",
+                        "Trạng thái tìm kiếm không hợp lệ: " + status + ". Các trạng thái hợp lệ: " + java.util.Arrays.toString(BookingStatus.values()),
                         "INVALID_SEARCH_STATUS"
                 );
             }
@@ -145,7 +145,7 @@ public class BookingService {
             bookingRepository.save(booking);
         } catch (IllegalArgumentException e) {
             throw new BusinessException(
-                    "Trạng thái không hợp lệ: " + statusString + ". Các trạng thái hợp lệ: RESERVED, CANCELLED, PLAYING",
+                    "Trạng thái không hợp lệ: " + statusString + ". Các trạng thái hợp lệ: " + java.util.Arrays.toString(BookingStatus.values()),
                     "INVALID_BOOKING_STATUS"
             );
         }
