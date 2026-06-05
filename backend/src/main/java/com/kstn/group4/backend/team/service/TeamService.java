@@ -103,16 +103,12 @@ public class TeamService {
 
     @Transactional(readOnly = true)
     public List<TeamResponse> getPendingTeams() {
-        return teamRepository.findByStatus(TeamStatus.PENDING).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return mapToResponseList(teamRepository.findByStatus(TeamStatus.PENDING));
     }
 
     @Transactional(readOnly = true)
     public List<TeamResponse> getAllTeams() {
-        return teamRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return mapToResponseList(teamRepository.findAll());
     }
 
     private void logAdminActivity(String actionType, String targetId, String description) {
@@ -246,8 +242,34 @@ public class TeamService {
 
     @Transactional(readOnly = true)
     public List<TeamResponse> getApprovedTeams() {
-        return teamRepository.findByStatus(TeamStatus.APPROVED).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return mapToResponseList(teamRepository.findByStatus(TeamStatus.APPROVED));
+    }
+
+    private List<TeamResponse> mapToResponseList(List<Team> teams) {
+        if (teams.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> teamIds = teams.stream().map(Team::getId).collect(Collectors.toList());
+        List<TeamMember> allMembers = teamMemberRepository.findByTeamIdIn(teamIds);
+
+        java.util.Map<Long, List<String>> membersMap = allMembers.stream()
+                .collect(Collectors.groupingBy(
+                        m -> m.getTeam().getId(),
+                        Collectors.mapping(m -> m.getId().getUserEmail(), Collectors.toList())
+                ));
+
+        return teams.stream().map(team -> new TeamResponse(
+                team.getId(),
+                team.getName(),
+                team.getCaptain().getId(),
+                team.getCaptain().getUsername(),
+                team.getDescription(),
+                team.getReputationScore(),
+                team.getStatus(),
+                team.getBannedUntil(),
+                team.getCreatedAt(),
+                membersMap.getOrDefault(team.getId(), new ArrayList<>())
+        )).collect(Collectors.toList());
     }
 }

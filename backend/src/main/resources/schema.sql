@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS `leagues`;
 DROP TABLE IF EXISTS `venues`;
 DROP TABLE IF EXISTS `team_members`;
 DROP TABLE IF EXISTS `teams`;
+DROP TABLE IF EXISTS `password_reset_tokens`;
 DROP TABLE IF EXISTS `users`;
 
 CREATE TABLE IF NOT EXISTS `users` (
@@ -26,6 +27,16 @@ CREATE TABLE IF NOT EXISTS `users` (
     `phone_number` VARCHAR(20),
     `avatar_url` VARCHAR(255),
     PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `token` VARCHAR(255) NOT NULL UNIQUE,
+    `expiry_date` DATETIME NOT NULL,
+    `user_id` INT NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_password_reset_tokens_user_id`
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `leagues` (
