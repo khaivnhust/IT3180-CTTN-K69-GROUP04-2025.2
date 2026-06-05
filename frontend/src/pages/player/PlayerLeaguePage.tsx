@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { Trophy, Users, RefreshCw } from "lucide-react";
+import { Trophy, Users, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
 import { getPublicLeagues } from "../../features/matchmaking/api/league.api";
 import type { League } from "../../features/matchmaking/types/league.types";
 import { toast } from "../../shared/utils/toast";
 import { PlayerNavBar } from "../../layouts/player/PlayerNavBar";
+import { LeagueRegistrationComponent } from "../../features/matchmaking/components/LeagueRegistration";
 
 export function PlayerLeaguePage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<number | null>(null);
 
   const fetchLeagues = useCallback(async () => {
     setLoading(true);
@@ -135,11 +137,35 @@ export function PlayerLeaguePage() {
                 </div>
 
                 <button 
-                  className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600"
-                  disabled={league.status !== "OPENING"}
+                  onClick={() => setSelectedLeagueId(selectedLeagueId === league.id ? null : league.id)}
+                  className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition flex items-center justify-center gap-2 ${
+                    selectedLeagueId === league.id 
+                    ? "bg-white/10 hover:bg-white/20" 
+                    : "bg-emerald-600 hover:bg-emerald-500"
+                  }`}
                 >
-                  {league.status === "OPENING" ? "Đăng ký tham gia" : "Xem chi tiết"}
+                  {selectedLeagueId === league.id ? (
+                    <>
+                      <ChevronUp size={16} />
+                      Đóng
+                    </>
+                  ) : (
+                    <>
+                      {league.status === "OPENING" ? "Đăng ký tham gia" : "Xem chi tiết"}
+                      <ChevronDown size={16} />
+                    </>
+                  )}
                 </button>
+
+                {selectedLeagueId === league.id && (
+                  <div className="mt-4">
+                    <LeagueRegistrationComponent 
+                      leagueId={league.id} 
+                      isManager={false} 
+                      leagueStatus={league.status}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, RefreshCw, Trophy, Users } from "lucide-react";
+import { useState, useEffect, useCallback, Fragment } from "react";
+import { Plus, Pencil, Trash2, RefreshCw, Trophy, Users, ClipboardList, ChevronUp } from "lucide-react";
 import { toast } from "../../../shared/utils/toast";
 import {
   getAdminLeagues,
@@ -8,12 +8,14 @@ import {
   deleteLeague,
 } from "../../matchmaking/api/league.api";
 import type { League, LeagueRequest, LeagueFormat, LeagueStatus } from "../../matchmaking/types/league.types";
+import { LeagueRegistrationComponent } from "./LeagueRegistration";
 
 export function LeagueManager() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLeague, setEditingLeague] = useState<League | null>(null);
+  const [expandedLeagueId, setExpandedLeagueId] = useState<number | null>(null);
 
   const [formData, setFormData] = useState<LeagueRequest>({
     name: "",
@@ -184,54 +186,74 @@ export function LeagueManager() {
               </thead>
               <tbody className="divide-y divide-white/5 text-white/90">
                 {leagues.map((league) => (
-                  <tr
-                    key={league.id}
-                    className="transition hover:bg-white/5 bg-[#0a4d29]/20"
-                  >
-                    <td className="px-4 py-3.5 font-semibold text-white">
-                      <div className="flex items-center gap-1.5">
-                        <Trophy size={14} className="text-amber-400" />
-                        {league.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-white/80">
-                      {getFormatLabel(league.format)}
-                    </td>
-                    <td className="px-4 py-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5 text-white/80">
-                        <Users size={14} className="text-emerald-400/80" />
-                        {league.numberOfTeams}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-white/80 max-w-[200px] truncate">
-                      {league.prize || "-"}
-                    </td>
-                    <td className="px-4 py-3.5 text-center">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusBadge(
-                          league.status
-                        )}`}
-                      >
-                        {getStatusLabel(league.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-right space-x-2">
-                      <button
-                        onClick={() => handleOpenEditModal(league)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
-                      >
-                        <Pencil size={12} />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDelete(league.id)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-rose-600/95 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700"
-                      >
-                        <Trash2 size={12} />
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={league.id}>
+                    <tr
+                      className="transition hover:bg-white/5 bg-[#0a4d29]/20"
+                    >
+                      <td className="px-4 py-3.5 font-semibold text-white">
+                        <div className="flex items-center gap-1.5">
+                          <Trophy size={14} className="text-amber-400" />
+                          {league.name}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-white/80">
+                        {getFormatLabel(league.format)}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1.5 text-white/80">
+                          <Users size={14} className="text-emerald-400/80" />
+                          {league.numberOfTeams}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-white/80 max-w-[200px] truncate">
+                        {league.prize || "-"}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusBadge(
+                            league.status
+                          )}`}
+                        >
+                          {getStatusLabel(league.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-right space-x-2">
+                        <button
+                          onClick={() => setExpandedLeagueId(expandedLeagueId === league.id ? null : league.id)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+                        >
+                          {expandedLeagueId === league.id ? <ChevronUp size={12} /> : <ClipboardList size={12} />}
+                          {expandedLeagueId === league.id ? "Đóng" : "Đăng ký"}
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditModal(league)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-sky-600/90 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500"
+                        >
+                          <Pencil size={12} />
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDelete(league.id)}
+                          className="inline-flex items-center gap-1 rounded-lg bg-rose-600/95 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700"
+                        >
+                          <Trash2 size={12} />
+                          Xóa
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedLeagueId === league.id && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-2 bg-black/10">
+                          <LeagueRegistrationComponent 
+                            leagueId={league.id} 
+                            isManager={true} 
+                            leagueStatus={league.status}
+                            onStatusChange={() => fetchLeagues()}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
