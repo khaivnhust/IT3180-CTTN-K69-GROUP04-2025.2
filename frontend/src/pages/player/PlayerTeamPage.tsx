@@ -23,13 +23,12 @@ export function PlayerTeamPage() {
     setLoading(true);
     setError(null);
     try {
-      const team = await getMyTeam();
+      const [team, approved] = await Promise.all([
+        getMyTeam(),
+        getApprovedTeams(),
+      ]);
       setMyTeam(team);
-
-      if (!team) {
-        const approved = await getApprovedTeams();
-        setApprovedTeams(approved);
-      }
+      setApprovedTeams(approved);
     } catch (err) {
       logApiError("PlayerTeamPage.fetchData", err);
       setError(getApiErrorMessage(err, "Không thể tải dữ liệu đội bóng. Vui lòng thử lại!"));

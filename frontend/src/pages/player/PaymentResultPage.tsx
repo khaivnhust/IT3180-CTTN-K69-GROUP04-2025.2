@@ -1,4 +1,4 @@
-import React from "react";
+
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { CheckCircle, XCircle, Home, Calendar } from "lucide-react";
 import { Button } from "@/shared/components/Button";

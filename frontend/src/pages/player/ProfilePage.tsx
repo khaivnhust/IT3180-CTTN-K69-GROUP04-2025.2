@@ -3,29 +3,35 @@ import {
   PlayerProfileForm,
   PlayerProfileSidebar,
   usePlayerProfile,
+  type PlayerProfileInfo,
 } from "../../features/account";
-import type { PlayerBookingHistoryItem } from "../../features/account/types/account.types";
 import { PlayerNavBar } from "../../layouts/player/PlayerNavBar";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getPlayerBookings, updatePlayerProfile } from "../../features/account/api/account.api";
-import { subscribeProfileEvent, emitProfileEvent } from "../../features/account/hooks/usePlayerProfile";
 import { getApiErrorMessage, logApiError } from "@/shared/utils/apiError";
 import { toast } from "../../shared/utils/toast";
 import { Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthContext } from "../../features/auth/hooks/useAuthContext";
+import { saveTokenToStorage, getUserFromStorage } from "@/shared/utils/tokenStorage";
 
 export function ProfilePage() {
-  const { userInfo, loadingUser, userError, refetch } = usePlayerProfile();
+  const queryClient = useQueryClient();
+  const { checkAuth } = useAuthContext();
+  const { userInfo, loadingUser, userError } = usePlayerProfile();
   const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "history" | "terms">("profile");
 
-  // Sync activeTab when navigating via router state
-  useEffect(() => {
-    if (location.state?.tab) {
-      setActiveTab(location.state.tab as "profile" | "history" | "terms");
+  // Sync activeTab when navigating via router state (render phase)
+  const [prevLocationState, setPrevLocationState] = useState<unknown>(null);
+  if (location.state !== prevLocationState) {
+    setPrevLocationState(location.state);
+    if (location.state && typeof location.state === "object" && "tab" in location.state) {
+      setActiveTab((location.state as { tab: "profile" | "history" | "terms" }).tab);
     }
-  }, [location.state]);
+  }
 
   // Smooth scroll window to top on activeTab change (important on mobile viewports)
   useEffect(() => {
@@ -33,79 +39,65 @@ export function ProfilePage() {
   }, [activeTab]);
 
   const [editData, setEditData] = useState({ username: "", phoneNumber: "", email: "" });
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  const [history, setHistory] = useState<PlayerBookingHistoryItem[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  // Sync editData when userInfo is loaded or updated (render phase)
+  const [prevUserInfo, setPrevUserInfo] = useState<PlayerProfileInfo | null>(null);
+  if (userInfo && userInfo !== prevUserInfo) {
+    setPrevUserInfo(userInfo);
+    setEditData({
+      username: userInfo.username,
+      phoneNumber: userInfo.phoneNumber || "",
+      email: userInfo.email,
+    });
+  }
 
-  useEffect(() => {
-    if (userInfo) {
-      setEditData({
-        username: userInfo.username,
-        phoneNumber: userInfo.phoneNumber || "",
-        email: userInfo.email,
-      });
-    }
-  }, [userInfo]);
+  // React Query for booking history
+  const {
+    data: history = [],
+    isLoading: loadingHistory,
+    error: historyQueryError,
+  } = useQuery({
+    queryKey: ["playerBookings"],
+    queryFn: getPlayerBookings,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  const fetchHistory = useCallback(() => {
-    setLoadingHistory(true);
-    setHistoryError(null);
-    getPlayerBookings()
-      .then((data) => {
-        setHistory(data);
-        setLoadingHistory(false);
-      })
-      .catch((err) => {
-        logApiError("ProfilePage.fetchHistory", err);
-        setHistoryError(getApiErrorMessage(err, "Không thể tải lịch sử đặt sân."));
-        setLoadingHistory(false);
-      });
-  }, []);
+  const historyError = historyQueryError
+    ? getApiErrorMessage(historyQueryError, "Không thể tải lịch sử đặt sân.")
+    : null;
 
-  // Effect 1: fetch history lần đầu khi mount
-  useEffect(() => {
-    fetchHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // React Query Mutation for profile updates
+  const updateProfileMutation = useMutation({
+    mutationFn: () => updatePlayerProfile(editData.username, editData.phoneNumber),
+    onSuccess: () => {
+      // Invalidate query to refetch latest profile details
+      void queryClient.invalidateQueries({ queryKey: ["playerProfile"] });
+      
+      // Update local storage and context state
+      const storedUser = getUserFromStorage();
+      if (storedUser) {
+        saveTokenToStorage(storedUser.token || "", {
+          type: storedUser.type || undefined,
+          role: storedUser.role || undefined,
+          email: storedUser.email || undefined,
+          userId: storedUser.userId || undefined,
+          username: editData.username,
+        });
+      }
+      checkAuth();
 
-  // Effect 2: refetch history khi userInfo thay đổi, bỏ qua lần mount đầu
-  useEffect(() => {
-    if (!isMounted) {
-      setIsMounted(true);
-      return;
-    }
-    if (userInfo) fetchHistory();
-  }, [userInfo, fetchHistory, isMounted]);
-
-  // Effect 3: subscribe event emitter để refetch cả profile lẫn history
-  useEffect(() => {
-    const handler = () => {
-      refetch();
-      fetchHistory();
-    };
-    const unsub = subscribeProfileEvent(handler);
-    return unsub;
-  }, [refetch, fetchHistory]);
+      toast.success("Cập nhật thông tin thành công!");
+      setIsEditing(false);
+    },
+    onError: (err) => {
+      logApiError("ProfilePage.updateProfile", err);
+      toast.error(getApiErrorMessage(err, "Lỗi khi cập nhật thông tin!"));
+    },
+  });
 
   const toggleEditing = async () => {
     if (isEditing) {
-      // Save changes
-      try {
-        setIsUpdating(true);
-        await updatePlayerProfile(editData.username, editData.phoneNumber);
-        refetch(); // fetch fresh data
-        emitProfileEvent(); // emit event to update other components like sidebar
-        toast.success("Cập nhật thông tin thành công!");
-        setIsEditing(false);
-      } catch (err) {
-        logApiError("ProfilePage.updateProfile", err);
-        toast.error(getApiErrorMessage(err, "Lỗi khi cập nhật thông tin!"));
-      } finally {
-        setIsUpdating(false);
-      }
+      updateProfileMutation.mutate();
     } else {
       setIsEditing(true);
     }
@@ -152,7 +144,7 @@ export function ProfilePage() {
                     onChangePhone={(value) => updateUserInfo("phoneNumber", value)}
                     onChangeEmail={(value) => updateUserInfo("email", value)}
                   />
-                  {isUpdating && (
+                  {updateProfileMutation.isPending && (
                     <div className="flex items-center text-sm text-[#2E7D1E] font-medium mb-4">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Đang lưu thay đổi...
