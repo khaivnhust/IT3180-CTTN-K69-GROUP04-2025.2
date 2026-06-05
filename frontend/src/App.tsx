@@ -17,8 +17,9 @@ import { MatchPage } from "./pages/player/MatchPage.tsx";
 import { ProfilePage } from "./pages/player/ProfilePage.tsx";
 import { PlayerTeamPage } from "./pages/player/PlayerTeamPage.tsx";
 import { PlayerLeaguePage } from "./pages/player/PlayerLeaguePage.tsx";
+import { CheckoutPage } from "./pages/player/CheckoutPage.tsx";
+import { PaymentResultPage } from "./pages/player/PaymentResultPage.tsx";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
-
 import { AdminProtectedRoute } from "./features/auth/components/AdminProtectedRoute";
 import { ToastContainer } from "./shared/components/Toast/Toast.tsx";
 
@@ -37,6 +38,8 @@ function App() {
         <Route path="/leagues" element={<PlayerLeaguePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/payment/vnpay-return" element={<PaymentResultPage />} />
         <Route
           path="/admin"
           element={
