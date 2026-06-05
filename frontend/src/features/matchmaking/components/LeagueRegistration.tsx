@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuthContext } from "../../auth/hooks/useAuthContext";
 import { leagueRegistrationApi } from "../api/leagueRegistrationApi";
 import type { LeagueRegistration, RegistrationStatus } from "../types/league.types";
@@ -26,7 +26,7 @@ export const LeagueRegistrationComponent: React.FC<LeagueRegistrationProps> = ({
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
 
-  const fetchData = async (showRefreshing = false) => {
+  const fetchData = useCallback(async (showRefreshing = false) => {
     try {
       if (showRefreshing) setRefreshing(true);
       else setLoading(true);
@@ -44,11 +44,11 @@ export const LeagueRegistrationComponent: React.FC<LeagueRegistrationProps> = ({
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [leagueId, user?.role]);
 
   useEffect(() => {
     fetchData();
-  }, [leagueId, user?.role]);
+  }, [fetchData]);
 
   const handleUpdateStatus = async (
     registrationId: number,
@@ -57,7 +57,7 @@ export const LeagueRegistrationComponent: React.FC<LeagueRegistrationProps> = ({
     try {
       await leagueRegistrationApi.updateRegistrationStatus(registrationId, status);
       await fetchData(true);
-    } catch (error) {
+    } catch {
       alert("Failed to update status");
     }
   };
@@ -75,7 +75,7 @@ export const LeagueRegistrationComponent: React.FC<LeagueRegistrationProps> = ({
       await leagueRegistrationApi.registerTeam(leagueId, Number(myTeam.id));
       await fetchData(true);
       alert("Gửi yêu cầu đăng ký thành công!");
-    } catch (error) {
+    } catch {
       alert("Lỗi khi đăng ký tham gia giải đấu");
     }
   };
@@ -94,7 +94,7 @@ export const LeagueRegistrationComponent: React.FC<LeagueRegistrationProps> = ({
       await leagueRegistrationApi.finalizeRegistration(leagueId);
       alert("Chốt danh sách đội thành công! Giải đấu đã bắt đầu.");
       if (onStatusChange) onStatusChange();
-    } catch (error) {
+    } catch {
       alert("Lỗi khi chốt danh sách đội.");
     } finally {
       setIsFinalizing(false);
