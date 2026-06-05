@@ -1,5 +1,10 @@
 import { Link } from "react-router-dom";
 import heroImg from "../assets/images/hero-lamine.webp";
+import sonImg from "../assets/images/sonb (2).jpg";
+import hieuImg from "../assets/images/Hieu.jpg";
+import longImg from "../assets/images/long.jpg";
+import khaiImg from "../assets/images/Khai.webp";
+import linhImg from "../assets/images/Linh.jpg";
 import { PlayerNavBar } from "../layouts/player/PlayerNavBar";
 import { 
   Calendar, 
@@ -63,11 +68,11 @@ export function LandingPage() {
   ];
 
   const devTeam = [
-    { name: "Đinh Thái Sơn", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80" },
-    { name: "Nguyễn Trí Hiếu", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&h=120&q=80" },
-    { name: "Nguyễn Đăng Long", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&h=120&q=80" },
-    { name: "Nguyễn Thế Khải", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=120&h=120&q=80" },
-    { name: "Phạm Gia Linh", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=80" },
+    { name: "Đinh Thái Sơn", avatar: sonImg },
+    { name: "Nguyễn Trí Hiếu", avatar: hieuImg },
+    { name: "Nguyễn Đăng Long", avatar: longImg },
+    { name: "Nguyễn Thế Khải", avatar: khaiImg },
+    { name: "Phạm Gia Linh", avatar: linhImg },
   ];
 
   return (
