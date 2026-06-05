@@ -5,6 +5,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ==========================================
 -- CLEAR DATA (EXCEPT USERS TO PROTECT TOKENS)
 -- ==========================================
+DELETE FROM `league_registrations`;
+DELETE FROM `leagues`;
 DELETE FROM `activity_logs`;
 DELETE FROM `booking_payments`;
 
@@ -33,15 +35,18 @@ ALTER TABLE `pitch_reviews` AUTO_INCREMENT = 1;
 ALTER TABLE `booking_payments` AUTO_INCREMENT = 1;
 ALTER TABLE `teams` AUTO_INCREMENT = 1;
 ALTER TABLE `matches` AUTO_INCREMENT = 1;
+ALTER TABLE `leagues` AUTO_INCREMENT = 1;
+ALTER TABLE `league_registrations` AUTO_INCREMENT = 1;
 
 -- ==========================================
 -- 1. USERS (INSERT IGNORE TO PROTECT ACTIVE TOKENS)
 -- ==========================================
-INSERT IGNORE INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`, `phone_number`, `avatar_url`)
+INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`, `phone_number`, `avatar_url`)
 VALUES
-    (1, 'owner_hoang', 'hoang.owner@football.vn', '$2a$10$Y9O5YLMY2VVLvxPUQXUuZOBV0ZQTvEVjYQhxFQDXvJ5y3YJ1dQrGG', 'ADMIN', NOW(), '0909123456', NULL),
-    (2, 'player_minh', 'minh.player@football.vn', '$2a$10$slYQmyNdGzin7olVN3p5be3DlH.PKZbv5H8KnzzigXXbVxzy6QMOG', 'PLAYER', NOW(), '0912345678', NULL),
-    (3, 'player_tuan', 'tuan.player@football.vn', '$2a$10$slYQmyNdGzin7olVN3p5be3DlH.PKZbv5H8KnzzigXXbVxzy6QMOG', 'PLAYER', NOW(), '0987654321', NULL);
+    (1, 'owner_hoang', 'hoang.owner@football.vn', '$2a$10$gI6fyFeS.5m5GStiXfpl9OLT1UUZ7r6A7gt466M7H/boSx1ppfUzq', 'ADMIN', NOW(), '0909123456', NULL),
+    (2, 'player_minh', 'minh.player@football.vn', '$2a$10$gI6fyFeS.5m5GStiXfpl9OLT1UUZ7r6A7gt466M7H/boSx1ppfUzq', 'PLAYER', NOW(), '0912345678', NULL),
+    (3, 'player_tuan', 'tuan.player@football.vn', '$2a$10$gI6fyFeS.5m5GStiXfpl9OLT1UUZ7r6A7gt466M7H/boSx1ppfUzq', 'PLAYER', NOW(), '0987654321', NULL)
+ON DUPLICATE KEY UPDATE `password` = VALUES(`password`);
 
 -- ==========================================
 -- 2. VENUES (2 Venues)
@@ -193,5 +198,13 @@ VALUES
     (3, 2, 2, NULL, 'WEAK', DATE_ADD(NOW(), INTERVAL 1 DAY), 'CANCELLED', 7, 8),
     -- Open match 2
     (4, 2, 1, NULL, 'GOOD', DATE_ADD(NOW(), INTERVAL 4 DAY), 'OPEN', 11, 10);
+
+-- ==========================================
+-- 10. LEAGUES
+-- ==========================================
+INSERT INTO `leagues` (`id`, `name`, `format`, `number_of_teams`, `prize`, `status`, `manager_id`, `created_at`)
+VALUES
+    (1, 'Giải Ngoại Hạng Yên Hòa 2026', 'ROUND_ROBIN', 4, 'Cúp vô địch + 10,000,000 VND', 'OPENING', 1, NOW()),
+    (2, 'Champions League Yên Hòa 2026', 'KNOCKOUT', 8, 'Cúp vô địch + 20,000,000 VND', 'OPENING', 1, NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;

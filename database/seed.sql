@@ -4,12 +4,10 @@ SET
 -- =========================
 -- CLEAR DATA
 -- =========================
+DELETE FROM `league_registrations`;
+DELETE FROM `leagues`;
 DELETE FROM `booking_payments`;
-<<<<<<< HEAD
 DELETE FROM `booking_services`;
-=======
-
->>>>>>> origin/dev
 DELETE FROM `pitch_reviews`;
 
 DELETE FROM `bookings`;
@@ -113,10 +111,14 @@ ALTER TABLE `teams` AUTO_INCREMENT = 1;
 
 ALTER TABLE `matches` AUTO_INCREMENT = 1;
 
+ALTER TABLE `leagues` AUTO_INCREMENT = 1;
+
+ALTER TABLE `league_registrations` AUTO_INCREMENT = 1;
+
 -- =========================
 -- 1. USERS (3 users: 1 ADMIN, 2 PLAYERS)
 -- =========================
--- Password: "password123" -> BCrypt encoded
+-- Password: "123456" -> BCrypt encoded
 INSERT INTO
     `users` (
     `id`,
@@ -133,7 +135,7 @@ VALUES
         1,
         'owner_hoang',
         'hoang.owner@football.vn',
-        '$2a$10$Y9O5YLMY2VVLvxPUQXUuZOBV0ZQTvEVjYQhxFQDXvJ5y3YJ1dQrGG',
+        '$2a$10$gI6fyFeS.5m5GStiXfpl9OLT1UUZ7r6A7gt466M7H/boSx1ppfUzq',
         'ADMIN',
         NOW(),
         '0909123456',
@@ -143,7 +145,7 @@ VALUES
         2,
         'player_minh',
         'minh.player@football.vn',
-        '$2a$10$slYQmyNdGzin7olVN3p5be3DlH.PKZbv5H8KnzzigXXbVxzy6QMOG',
+        '$2a$10$gI6fyFeS.5m5GStiXfpl9OLT1UUZ7r6A7gt466M7H/boSx1ppfUzq',
         'PLAYER',
         NOW(),
         '0912345678',
@@ -153,7 +155,7 @@ VALUES
         3,
         'player_tuan',
         'tuan.player@football.vn',
-        '$2a$10$slYQmyNdGzin7olVN3p5be3DlH.PKZbv5H8KnzzigXXbVxzy6QMOG',
+        '$2a$10$gI6fyFeS.5m5GStiXfpl9OLT1UUZ7r6A7gt466M7H/boSx1ppfUzq',
         'PLAYER',
         NOW(),
         '0987654321',
@@ -319,5 +321,10 @@ VALUES
     -- Matched match
     (2, 1, 1, 2, 'AVERAGE', DATE_ADD(NOW(), INTERVAL 3 DAY), 'MATCHED');
 
-
->>>>>>> origin/dev
+-- =========================
+-- 10. LEAGUES
+-- =========================
+INSERT INTO `leagues` (`id`, `name`, `format`, `number_of_teams`, `prize`, `status`, `manager_id`, `created_at`)
+VALUES
+    (1, 'Giải Ngoại Hạng Yên Hòa 2026', 'ROUND_ROBIN', 4, 'Cúp vô địch + 10,000,000 VND', 'OPENING', 1, NOW()),
+    (2, 'Champions League Yên Hòa 2026', 'KNOCKOUT', 8, 'Cúp vô địch + 20,000,000 VND', 'OPENING', 1, NOW());

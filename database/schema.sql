@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS `league_registrations`;
+DROP TABLE IF EXISTS `leagues`;
 DROP TABLE IF EXISTS `booking_payments`;
 DROP TABLE IF EXISTS `pitch_reviews`;
 DROP TABLE IF EXISTS `bookings`;
@@ -22,6 +24,20 @@ CREATE TABLE IF NOT EXISTS `users` (
     `phone_number` VARCHAR(20),
     `avatar_url` VARCHAR(255),
     PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `leagues` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL,
+    `format` VARCHAR(50) NOT NULL,
+    `number_of_teams` INT NOT NULL,
+    `prize` TEXT,
+    `status` VARCHAR(50) NOT NULL,
+    `manager_id` INT NOT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_leagues_manager_id`
+        FOREIGN KEY (`manager_id`) REFERENCES `users` (`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `venues` (
@@ -173,6 +189,24 @@ CREATE TABLE IF NOT EXISTS `teams` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_teams_captain_id`
         FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `league_registrations` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `league_id` INT NOT NULL,
+    `team_id` BIGINT NOT NULL,
+    `captain_id` INT NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_league_registrations_league_id`
+        FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_league_registrations_team_id`
+        FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_league_registrations_captain_id`
+        FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `uk_league_registrations_league_team`
+        UNIQUE (`league_id`, `team_id`)
 );
 
 CREATE TABLE IF NOT EXISTS `team_members` (

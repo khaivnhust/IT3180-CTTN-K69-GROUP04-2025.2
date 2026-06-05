@@ -19,3 +19,17 @@ export interface LeagueRequest {
   prize: string;
   status: LeagueStatus;
 }
+
+export type RegistrationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface LeagueRegistration {
+  id: number;
+  leagueId: number;
+  leagueName: string;
+  teamId: number;
+  teamName: string;
+  captainId: number;
+  captainName: string;
+  status: RegistrationStatus;
+  createdAt: string;
+}
