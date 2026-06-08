@@ -59,7 +59,7 @@ export const mockKnockoutMatches: MatchResponse[] = [
     skillLevel: "AVERAGE", matchTime: "2026-06-11T18:00:00", status: "COMPLETED", homeScore: 0, awayScore: 1, roundNumber: 1, nextMatchId: 206
   },
   {
-    id: 204, venueId: 1, venueName: "Sân Bóng Mixi", hostTeamId: null as any, hostTeamName: "", guestTeamId: null as any, guestTeamName: "",
+    id: 204, venueId: 1, venueName: "Sân Bóng Mixi", hostTeamId: 0, hostTeamName: "", guestTeamId: null, guestTeamName: "",
     skillLevel: "AVERAGE", matchTime: "2026-06-11T19:30:00", status: "CANCELLED", roundNumber: 1, nextMatchId: 206 // BYE Match representation
   },
   
@@ -69,13 +69,13 @@ export const mockKnockoutMatches: MatchResponse[] = [
     skillLevel: "AVERAGE", matchTime: "2026-06-17T18:00:00", status: "COMPLETED", homeScore: 1, awayScore: 2, roundNumber: 2, nextMatchId: 207
   },
   {
-    id: 206, venueId: 1, venueName: "Sân Bóng Mixi", hostTeamId: 4, hostTeamName: "Dong Anh FC", guestTeamId: null as any, guestTeamName: "",
+    id: 206, venueId: 1, venueName: "Sân Bóng Mixi", hostTeamId: 4, hostTeamName: "Dong Anh FC", guestTeamId: null, guestTeamName: "",
     skillLevel: "AVERAGE", matchTime: "2026-06-17T19:30:00", status: "SCHEDULED", roundNumber: 2, nextMatchId: 207 // Team 4 gets BYE from previous round basically
   },
 
   // Final (Round 3)
   {
-    id: 207, venueId: 1, venueName: "Sân Bóng Mixi", hostTeamId: 5, hostTeamName: "Hanoi VIP", guestTeamId: null as any, guestTeamName: "",
+    id: 207, venueId: 1, venueName: "Sân Bóng Mixi", hostTeamId: 5, hostTeamName: "Hanoi VIP", guestTeamId: null, guestTeamName: "",
     skillLevel: "AVERAGE", matchTime: "2026-06-24T18:00:00", status: "SCHEDULED", roundNumber: 3
   },
 ];
