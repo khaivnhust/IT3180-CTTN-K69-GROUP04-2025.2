@@ -28,11 +28,11 @@ const formatNotificationTime = (value: string): string => {
 
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "Vua xong";
-  if (minutes < 60) return `${minutes} phut truoc`;
+  if (minutes < 1) return "Vừa xong";
+  if (minutes < 60) return `${minutes} phút trước`;
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} gio truoc`;
+  if (hours < 24) return `${hours} giờ trước`;
 
   return date.toLocaleDateString("vi-VN", {
     day: "2-digit",
@@ -72,7 +72,7 @@ export function NotificationDropdown({
       setUnreadCount(latestUnreadCount);
     } catch (fetchError) {
       console.error("Failed to load notifications:", fetchError);
-      setError("Khong tai duoc thong bao");
+      setError("Không tải được thông báo");
     } finally {
       setIsLoading(false);
     }
@@ -162,7 +162,7 @@ export function NotificationDropdown({
           "relative inline-flex h-10 w-10 items-center justify-center rounded-full border text-white transition focus:outline-none",
           buttonClassName,
         )}
-        aria-label="Thong bao"
+        aria-label="Thông báo"
         aria-expanded={isOpen}
       >
         <Bell size={18} />
@@ -186,7 +186,7 @@ export function NotificationDropdown({
           )}
         >
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-            <p className="text-sm font-semibold text-white">Thong bao</p>
+            <p className="text-sm font-semibold text-white">Thông báo</p>
             <button
               type="button"
               onClick={handleMarkAllAsRead}
@@ -198,7 +198,7 @@ export function NotificationDropdown({
               ) : (
                 <CheckCheck size={14} />
               )}
-              Da doc
+              Đã đọc
             </button>
           </div>
 
@@ -206,7 +206,7 @@ export function NotificationDropdown({
             {isLoading && notifications.length === 0 ? (
               <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-white/75">
                 <Loader2 size={16} className="animate-spin" />
-                Dang tai...
+                Đang tải...
               </div>
             ) : null}
 
@@ -218,7 +218,7 @@ export function NotificationDropdown({
 
             {!isLoading && !error && notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-white/70">
-                Chua co thong bao
+                Chưa có thông báo
               </div>
             ) : null}
 

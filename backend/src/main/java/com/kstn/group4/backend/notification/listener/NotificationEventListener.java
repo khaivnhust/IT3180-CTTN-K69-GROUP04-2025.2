@@ -29,8 +29,8 @@ public class NotificationEventListener {
             notificationService.createNotification(
                     event.getRecipientId(),
                     NotificationType.BOOKING_STATUS,
-                    "Don dat san da duoc duyet",
-                    buildBookingMessage(event, "da duoc duyet"),
+                    "Đơn đặt sân đã được duyệt",
+                    buildBookingMessage(event, "đã được duyệt"),
                     "BOOKING",
                     event.getBookingId().toString()
             );
@@ -41,8 +41,8 @@ public class NotificationEventListener {
             notificationService.createNotification(
                     event.getRecipientId(),
                     NotificationType.BOOKING_STATUS,
-                    "Don dat san da bi huy",
-                    buildBookingMessage(event, "da bi huy"),
+                    "Đơn đặt sân đã bị hủy",
+                    buildBookingMessage(event, "đã bị hủy"),
                     "BOOKING",
                     event.getBookingId().toString()
             );
@@ -54,8 +54,8 @@ public class NotificationEventListener {
         notificationService.createNotification(
                 event.getRecipientId(),
                 NotificationType.TEAM_INVITATION,
-                "Loi moi vao doi bong",
-                "Ban duoc moi vao doi " + event.getTeamName() + " boi " + event.getCaptainName() + ".",
+                "Lời mời vào đội bóng",
+                "Bạn được mời vào đội " + event.getTeamName() + " bởi " + event.getCaptainName() + ".",
                 "TEAM",
                 event.getTeamId().toString()
         );
@@ -65,11 +65,11 @@ public class NotificationEventListener {
     public void handleMatchScheduleChanged(MatchScheduleChangedEvent event) {
         Set<Long> teamIds = new LinkedHashSet<>(event.getTeamIds());
         String title = "CANCELLED".equals(event.getChangeType())
-                ? "Lich thi dau da bi huy"
-                : "Lich thi dau da cap nhat";
-        String message = "Tran dau tai " + event.getVenueName()
-                + " luc " + event.getMatchTime().format(DATE_TIME_FORMAT)
-                + ("CANCELLED".equals(event.getChangeType()) ? " da bi huy." : " da duoc xep lich.");
+                ? "Lịch thi đấu đã bị hủy"
+                : "Lịch thi đấu đã cập nhật";
+        String message = "Trận đấu tại " + event.getVenueName()
+                + " lúc " + event.getMatchTime().format(DATE_TIME_FORMAT)
+                + ("CANCELLED".equals(event.getChangeType()) ? " đã bị hủy." : " đã được xếp lịch.");
 
         for (Long teamId : teamIds) {
             notificationService.createNotificationsForTeam(
@@ -84,10 +84,10 @@ public class NotificationEventListener {
     }
 
     private String buildBookingMessage(BookingStatusChangedEvent event, String statusText) {
-        return "Don #" + event.getBookingId()
-                + " tai " + event.getPitchName()
-                + " ngay " + event.getBookingDate().format(DATE_FORMAT)
-                + " luc " + event.getStartTime().format(TIME_FORMAT)
+        return "Đơn #" + event.getBookingId()
+                + " tại " + event.getPitchName()
+                + " ngày " + event.getBookingDate().format(DATE_FORMAT)
+                + " lúc " + event.getStartTime().format(TIME_FORMAT)
                 + " " + statusText + ".";
     }
 }
