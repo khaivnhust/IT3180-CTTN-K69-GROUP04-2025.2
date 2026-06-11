@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS `booking_services`;
 DROP TABLE IF EXISTS `booking_payments`;
 DROP TABLE IF EXISTS `pitch_reviews`;
+DROP TABLE IF EXISTS `league_announcement_comments`;
+DROP TABLE IF EXISTS `league_announcements`;
 DROP TABLE IF EXISTS `bookings`;
 DROP TABLE IF EXISTS `services`;
 DROP TABLE IF EXISTS `price_rules`;
@@ -43,6 +45,31 @@ CREATE TABLE IF NOT EXISTS `leagues` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_leagues_manager_id`
         FOREIGN KEY (`manager_id`) REFERENCES `users` (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `league_announcements` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `league_id` INT NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `content` TEXT NOT NULL,
+    `created_at` DATETIME NOT NULL,
+    `updated_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_league_announcements_league_id`
+        FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS `league_announcement_comments` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `announcement_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `content` TEXT NOT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_lac_announcement_id`
+        FOREIGN KEY (`announcement_id`) REFERENCES `league_announcements` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_lac_user_id`
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `venues` (

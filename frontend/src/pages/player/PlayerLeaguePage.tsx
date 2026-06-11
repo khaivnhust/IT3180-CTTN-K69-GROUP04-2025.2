@@ -8,9 +8,10 @@ import { LeagueRegistrationComponent } from "../../features/matchmaking/componen
 import { LeagueStandingsTable } from "../../features/statistics/components/LeagueStandingsTable";
 import { TopScorersList } from "../../features/statistics/components/TopScorersList";
 import { HeadToHeadStats } from "../../features/statistics/components/HeadToHeadStats";
+import { LeagueAnnouncementTab } from "../../features/matchmaking/components/LeagueAnnouncementTab";
 
 const LeagueDetails = ({ league }: { league: League }) => {
-  const [activeTab, setActiveTab] = useState<"info" | "standings" | "stats">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "standings" | "stats" | "announcements">("info");
 
   return (
     <div className="mt-4 bg-black/20 rounded-xl overflow-hidden border border-white/5">
@@ -20,6 +21,12 @@ const LeagueDetails = ({ league }: { league: League }) => {
           className={`flex-1 py-3 text-sm font-semibold transition ${activeTab === "info" ? "text-emerald-400 border-b-2 border-emerald-500" : "text-white/60 hover:text-white"}`}
         >
           {league.status === "OPENING" ? "Đăng ký" : "Thông tin"}
+        </button>
+        <button 
+          onClick={() => setActiveTab("announcements")} 
+          className={`flex-1 py-3 text-sm font-semibold transition ${activeTab === "announcements" ? "text-emerald-400 border-b-2 border-emerald-500" : "text-white/60 hover:text-white"}`}
+        >
+          Bảng tin
         </button>
         {league.status === "IN_PROGRESS" && (
           <>
@@ -46,6 +53,9 @@ const LeagueDetails = ({ league }: { league: League }) => {
             isManager={false} 
             leagueStatus={league.status}
           />
+        )}
+        {activeTab === "announcements" && (
+          <LeagueAnnouncementTab leagueId={league.id} isAdmin={false} />
         )}
         {activeTab === "standings" && league.status === "IN_PROGRESS" && (
           <LeagueStandingsTable leagueId={league.id} />

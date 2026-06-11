@@ -74,3 +74,71 @@ export const submitMatchResult = async (
   const response = await apiClient.put<MatchResponse>(`/admin/matches/${matchId}/result`, data);
   return response.data;
 };
+
+// --- LEAGUE ANNOUNCEMENTS API ---
+
+export interface LeagueAnnouncement {
+  id: number;
+  leagueId: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeagueAnnouncementComment {
+  id: number;
+  announcementId: number;
+  userId: number;
+  username: string;
+  userAvatarUrl?: string;
+  content: string;
+  createdAt: string;
+}
+
+export const getLeagueAnnouncements = async (leagueId: number): Promise<LeagueAnnouncement[]> => {
+  const response = await apiClient.get<LeagueAnnouncement[]>(`/leagues/${leagueId}/announcements`);
+  return response.data;
+};
+
+export const getLeagueAnnouncementById = async (id: number): Promise<LeagueAnnouncement> => {
+  const response = await apiClient.get<LeagueAnnouncement>(`/leagues/announcements/${id}`);
+  return response.data;
+};
+
+export const createLeagueAnnouncement = async (
+  leagueId: number,
+  data: { title: string; content: string }
+): Promise<LeagueAnnouncement> => {
+  const response = await apiClient.post<LeagueAnnouncement>(`/admin/leagues/${leagueId}/announcements`, data);
+  return response.data;
+};
+
+export const updateLeagueAnnouncement = async (
+  id: number,
+  data: { title: string; content: string }
+): Promise<LeagueAnnouncement> => {
+  const response = await apiClient.put<LeagueAnnouncement>(`/admin/leagues/announcements/${id}`, data);
+  return response.data;
+};
+
+export const deleteLeagueAnnouncement = async (id: number): Promise<void> => {
+  await apiClient.delete(`/admin/leagues/announcements/${id}`);
+};
+
+export const getAnnouncementComments = async (announcementId: number): Promise<LeagueAnnouncementComment[]> => {
+  const response = await apiClient.get<LeagueAnnouncementComment[]>(`/leagues/announcements/${announcementId}/comments`);
+  return response.data;
+};
+
+export const addAnnouncementComment = async (
+  announcementId: number,
+  data: { content: string }
+): Promise<LeagueAnnouncementComment> => {
+  const response = await apiClient.post<LeagueAnnouncementComment>(`/leagues/announcements/${announcementId}/comments`, data);
+  return response.data;
+};
+
+export const deleteAnnouncementComment = async (id: number): Promise<void> => {
+  await apiClient.delete(`/leagues/announcements/comments/${id}`);
+};
