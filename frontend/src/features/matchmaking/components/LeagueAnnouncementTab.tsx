@@ -192,20 +192,20 @@ export const LeagueAnnouncementTab: React.FC<LeagueAnnouncementTabProps> = ({
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString("vi-VN", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } catch (e) {
-      return dateStr;
-    }
-  };
+ const formatDate = (dateStr: string) => {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch {  // ✅ Bỏ hoàn toàn tham số e nếu không dùng
+    return dateStr;
+  }
+};
 
   return (
     <div className="space-y-6">
