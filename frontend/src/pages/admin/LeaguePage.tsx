@@ -9,6 +9,7 @@ import {
   submitMatchResult 
 } from "../../features/matchmaking/api/league.api";
 import { leagueRegistrationApi } from "../../features/matchmaking/api/leagueRegistrationApi";
+import { LeagueAnnouncementTab } from "../../features/matchmaking/components/LeagueAnnouncementTab";
 import type { League } from "../../features/matchmaking/types/league.types";
 import type { MatchResponse } from "../../features/matchmaking/types/matchmaking.types";
 import type { TournamentTeam } from "../../features/statistics/types/statistics.types";
@@ -21,7 +22,7 @@ export function LeaguePage() {
   const [generating, setGenerating] = useState(false);
   
   // Tab within detail view
-  const [activeTab, setActiveTab] = useState<"SCHEDULE" | "STANDINGS" | "BRACKET">("SCHEDULE");
+  const [activeTab, setActiveTab] = useState<"SCHEDULE" | "STANDINGS" | "BRACKET" | "ANNOUNCEMENTS">("SCHEDULE");
   
   // Modal states for result entry
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
@@ -62,7 +63,7 @@ export function LeaguePage() {
   useEffect(() => {
     if (selectedLeague) {
       loadLeagueDetails(selectedLeague.id);
-      setActiveTab(selectedLeague.format === "KNOCKOUT" ? "BRACKET" : "STANDINGS");
+      setActiveTab("ANNOUNCEMENTS");
     }
   }, [selectedLeague, loadLeagueDetails]);
 
@@ -227,37 +228,47 @@ export function LeaguePage() {
         </div>
         
         {/* Navigation Tabs */}
-        {matches.length > 0 && (
-          <div className="flex bg-black/20 rounded-xl p-1 border border-white/10">
-            {selectedLeague.format === "ROUND_ROBIN" && (
-              <button
-                onClick={() => setActiveTab("STANDINGS")}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "STANDINGS" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
-              >
-                <Award size={14} />
-                Bảng xếp hạng
-              </button>
-            )}
-            
-            {selectedLeague.format === "KNOCKOUT" && (
-              <button
-                onClick={() => setActiveTab("BRACKET")}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "BRACKET" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
-              >
-                <Trophy size={14} />
-                Nhánh đấu
-              </button>
-            )}
+        <div className="flex bg-black/20 rounded-xl p-1 border border-white/10">
+          <button
+            onClick={() => setActiveTab("ANNOUNCEMENTS")}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "ANNOUNCEMENTS" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
+          >
+            <Trophy size={14} />
+            Bảng tin
+          </button>
+          
+          {matches.length > 0 && (
+            <>
+              {selectedLeague.format === "ROUND_ROBIN" && (
+                <button
+                  onClick={() => setActiveTab("STANDINGS")}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "STANDINGS" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
+                >
+                  <Award size={14} />
+                  Bảng xếp hạng
+                </button>
+              )}
+              
+              {selectedLeague.format === "KNOCKOUT" && (
+                <button
+                  onClick={() => setActiveTab("BRACKET")}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "BRACKET" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
+                >
+                  <Trophy size={14} />
+                  Nhánh đấu
+                </button>
+              )}
 
-            <button
-              onClick={() => setActiveTab("SCHEDULE")}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "SCHEDULE" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
-            >
-              <Calendar size={14} />
-              Lịch thi đấu
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() => setActiveTab("SCHEDULE")}
+                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition ${activeTab === "SCHEDULE" ? "bg-emerald-600 text-white shadow" : "text-white/60 hover:text-white"}`}
+              >
+                <Calendar size={14} />
+                Lịch thi đấu
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Main Content Area */}
@@ -266,63 +277,22 @@ export function LeaguePage() {
           <Loader2 size={36} className="animate-spin text-emerald-400" />
           <p className="mt-4 text-sm">Đang tải dữ liệu giải đấu...</p>
         </div>
-      ) : matches.length === 0 ? (
-        /* Empty State / Schedule Generation Trigger */
-        <div className="rounded-2xl border border-white/10 bg-[#005E2E]/10 p-8 text-center text-white/90 space-y-6">
-          <div className="max-w-md mx-auto space-y-3">
-            <Trophy size={48} className="mx-auto text-amber-400" />
-            <h3 className="text-xl font-bold text-white">Chưa xếp lịch thi đấu</h3>
-            <p className="text-sm text-white/70">
-              Giải đấu chưa được xếp lịch thi đấu tự động. Vui lòng duyệt ít nhất 2 đội tham gia trong mục "Đăng ký" của giải đấu, sau đó bấm nút bên dưới để tạo lịch thi đấu tự động.
-            </p>
-          </div>
-          
-          <div className="border border-white/10 rounded-xl bg-black/20 p-5 max-w-lg mx-auto">
-            <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-3 flex items-center gap-1.5 justify-center">
-              <Users size={14} />
-              Các đội đã duyệt tham gia ({teams.length})
-            </h4>
-            {teams.length > 0 ? (
-              <div className="flex flex-wrap gap-2 justify-center">
-                {teams.map(t => (
-                  <span key={t.id} className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-3 py-1 rounded-lg text-sm font-medium">
-                    {t.name}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-rose-300">Chưa có đội bóng nào được duyệt tham gia.</p>
-            )}
-          </div>
-
-          <button
-            onClick={handleGenerateSchedule}
-            disabled={generating || teams.length < 2}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 transition disabled:opacity-50 active:scale-95 cursor-pointer"
-          >
-            {generating ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Đang xếp trận...
-              </>
-            ) : (
-              <>
-                <Play size={18} />
-                Xếp lịch thi đấu tự động
-              </>
-            )}
-          </button>
-        </div>
       ) : (
         /* Tab Contents */
         <div className="space-y-6">
-          {activeTab === "STANDINGS" && (
+          {activeTab === "ANNOUNCEMENTS" && (
+            <div className="rounded-2xl border border-white/10 bg-[#005E2E]/10 p-6">
+              <LeagueAnnouncementTab leagueId={selectedLeague.id} isAdmin={true} />
+            </div>
+          )}
+
+          {activeTab === "STANDINGS" && matches.length > 0 && (
             <div className="space-y-4">
               <LeagueStanding standings={calculatedStandings} />
             </div>
           )}
 
-          {activeTab === "BRACKET" && (
+          {activeTab === "BRACKET" && matches.length > 0 && (
             <div className="space-y-4">
               <TournamentBracket 
                 matches={matches} 
@@ -333,7 +303,7 @@ export function LeaguePage() {
             </div>
           )}
 
-          {activeTab === "SCHEDULE" && (
+          {activeTab === "SCHEDULE" && matches.length > 0 && (
             <div className="space-y-4">
               <WeeklySchedule 
                 matches={matches} 
@@ -341,6 +311,55 @@ export function LeaguePage() {
                 isAdmin={true} 
                 onUpdateResult={handleOpenResultModal} 
               />
+            </div>
+          )}
+
+          {activeTab !== "ANNOUNCEMENTS" && matches.length === 0 && (
+            /* Empty State / Schedule Generation Trigger */
+            <div className="rounded-2xl border border-white/10 bg-[#005E2E]/10 p-8 text-center text-white/90 space-y-6">
+              <div className="max-w-md mx-auto space-y-3">
+                <Trophy size={48} className="mx-auto text-amber-400" />
+                <h3 className="text-xl font-bold text-white">Chưa xếp lịch thi đấu</h3>
+                <p className="text-sm text-white/70">
+                  Giải đấu chưa được xếp lịch thi đấu tự động. Vui lòng duyệt ít nhất 2 đội tham gia trong mục "Đăng ký" của giải đấu, sau đó bấm nút bên dưới để tạo lịch thi đấu tự động.
+                </p>
+              </div>
+              
+              <div className="border border-white/10 rounded-xl bg-black/20 p-5 max-w-lg mx-auto">
+                <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-3 flex items-center gap-1.5 justify-center">
+                  <Users size={14} />
+                  Các đội đã duyệt tham gia ({teams.length})
+                </h4>
+                {teams.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {teams.map(t => (
+                      <span key={t.id} className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-3 py-1 rounded-lg text-sm font-medium">
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-rose-300">Chưa có đội bóng nào được duyệt tham gia.</p>
+                )}
+              </div>
+
+              <button
+                onClick={handleGenerateSchedule}
+                disabled={generating || teams.length < 2}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 transition disabled:opacity-50 active:scale-95 cursor-pointer"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Đang xếp trận...
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} />
+                    Xếp lịch thi đấu tự động
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
