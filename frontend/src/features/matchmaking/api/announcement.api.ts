@@ -27,7 +27,7 @@ export const announcementApi = {
       // TODO: Backend chưa có API này. Cần implement Backend AnnouncementController
       const response = await apiClient.get(`/public/leagues/${leagueId}/announcements`);
       return response.data;
-    } catch (error) {
+    } catch {
       console.warn("Backend chưa implement API getAnnouncementsByLeague. Trả về mock data tạm thời.");
       const allAnnouncements = getMockAnnouncements();
       return allAnnouncements.filter(a => a.leagueId === leagueId);
@@ -39,7 +39,7 @@ export const announcementApi = {
       // TODO: Backend chưa có API này. Cần implement Backend AnnouncementController
       const response = await apiClient.post(`/admin/leagues/${leagueId}/announcements`, data);
       return response.data;
-    } catch (error) {
+    } catch {
       console.warn("Backend chưa implement API createAnnouncement. Dùng mock data.");
       const newAnnouncement: LeagueAnnouncement = {
         id: Math.floor(Math.random() * 1000000),

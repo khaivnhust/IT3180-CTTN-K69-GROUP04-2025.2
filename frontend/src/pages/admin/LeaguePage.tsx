@@ -1,23 +1,63 @@
 import { useState, useEffect } from 'react';
 import { LeagueManager } from "../../features/matchmaking/components/LeagueManager";
 import { LeagueStanding, WeeklySchedule, TournamentBracket, calculateStandings } from "../../features/statistics";
-import { mockTeams, mockRoundRobinMatches, mockKnockoutMatches } from "../../features/statistics/data/mockStatisticsData";
 import { LeagueAnnouncementTab } from "../../features/matchmaking/components/LeagueAnnouncementTab";
 import { getAdminLeagues } from "../../features/matchmaking/api/league.api";
+import { leagueRegistrationApi } from "../../features/matchmaking/api/leagueRegistrationApi";
 import type { League } from "../../features/matchmaking/types/league.types";
+import type { TournamentTeam } from "../../features/statistics/types/statistics.types";
 
 export function LeaguePage() {
   const [viewMode, setViewMode] = useState<"MANAGER" | "STATS_RR" | "STATS_KO" | "ANNOUNCEMENTS">("MANAGER");
   const [leagues, setLeagues] = useState<League[]>([]);
   const [selectedLeagueId, setSelectedLeagueId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [teams, setTeams] = useState<TournamentTeam[]>([]);
 
-  const roundRobinStandings = calculateStandings(mockRoundRobinMatches, mockTeams);
+  // Calculate standings with real teams but empty matches (since backend has no match API for leagues yet)
+  const roundRobinStandings = calculateStandings([], teams);
 
   useEffect(() => {
-    if (viewMode === "ANNOUNCEMENTS") {
-      getAdminLeagues().then(setLeagues).catch(console.error);
+    const fetchLeagues = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getAdminLeagues();
+        setLeagues(data);
+      } catch (err) {
+        console.error(err);
+        setError("Không thể tải danh sách giải đấu");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeagues();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedLeagueId) {
+      setTeams([]);
+      return;
     }
-  }, [viewMode]);
+    const fetchTeams = async () => {
+      try {
+        const registrations = await leagueRegistrationApi.getRegistrationsByLeague(selectedLeagueId);
+        // Only get approved teams
+        const approvedTeams = registrations
+          .filter(r => r.status === "APPROVED")
+          .map(r => ({
+            id: r.teamId,
+            name: r.teamName,
+            logoUrl: undefined
+          }));
+        setTeams(approvedTeams);
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách đội", err);
+      }
+    };
+    fetchTeams();
+  }, [selectedLeagueId]);
 
   return (
     <section className="space-y-5">
@@ -29,25 +69,25 @@ export function LeaguePage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button 
+          <button
             onClick={() => setViewMode("MANAGER")}
             className={`px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'MANAGER' ? 'bg-white text-[#005E2E]' : 'bg-transparent text-white border border-white/30 hover:bg-white/10'}`}
           >
             Quản lý chung
           </button>
-          <button 
+          <button
             onClick={() => setViewMode("ANNOUNCEMENTS")}
             className={`px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'ANNOUNCEMENTS' ? 'bg-white text-[#005E2E]' : 'bg-transparent text-white border border-white/30 hover:bg-white/10'}`}
           >
             Bảng tin
           </button>
-          <button 
+          <button
             onClick={() => setViewMode("STATS_RR")}
             className={`px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'STATS_RR' ? 'bg-white text-[#005E2E]' : 'bg-transparent text-white border border-white/30 hover:bg-white/10'}`}
           >
             Thống kê (Vòng tròn)
           </button>
-          <button 
+          <button
             onClick={() => setViewMode("STATS_KO")}
             className={`px-4 py-2 rounded text-sm font-medium transition ${viewMode === 'STATS_KO' ? 'bg-white text-[#005E2E]' : 'bg-transparent text-white border border-white/30 hover:bg-white/10'}`}
           >
@@ -55,13 +95,13 @@ export function LeaguePage() {
           </button>
         </div>
       </header>
-      
-      {viewMode === "MANAGER" && <LeagueManager />}
-      
-      {viewMode === "ANNOUNCEMENTS" && (
+
+      {viewMode === "MANAGER" ? (
+        <LeagueManager />
+      ) : (
         <div className="rounded-2xl border border-white/15 bg-[#005E2E]/32 p-5 shadow-lg">
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-white mb-2">Chọn giải đấu để xem/đăng thông báo:</label>
+            <label className="block text-sm font-semibold text-white mb-2">Chọn giải đấu:</label>
             <select
               value={selectedLeagueId || ""}
               onChange={(e) => setSelectedLeagueId(e.target.value ? Number(e.target.value) : null)}
@@ -72,28 +112,34 @@ export function LeaguePage() {
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
+            {loading && <p className="text-sm text-white/50 mt-2">Đang tải dữ liệu...</p>}
+            {error && <p className="text-sm text-red-400 mt-2">{error}</p>}
           </div>
 
-          {selectedLeagueId ? (
-            <LeagueAnnouncementTab leagueId={selectedLeagueId} isAdmin={true} />
-          ) : (
+          {!selectedLeagueId ? (
             <div className="py-10 text-center text-white/50 border border-dashed border-white/10 rounded-xl">
-              Vui lòng chọn giải đấu ở trên để tiếp tục.
+              Vui lòng chọn giải đấu ở trên để xem chi tiết.
             </div>
+          ) : (
+            <>
+              {viewMode === "ANNOUNCEMENTS" && (
+                <LeagueAnnouncementTab leagueId={selectedLeagueId} isAdmin={true} />
+              )}
+
+              {viewMode === "STATS_RR" && (
+                <div className="space-y-6">
+                  <LeagueStanding standings={roundRobinStandings} />
+                  <WeeklySchedule matches={[]} teams={teams} />
+                </div>
+              )}
+
+              {viewMode === "STATS_KO" && (
+                <div className="space-y-6">
+                  <TournamentBracket matches={[]} teams={teams} />
+                </div>
+              )}
+            </>
           )}
-        </div>
-      )}
-
-      {viewMode === "STATS_RR" && (
-        <div className="space-y-6">
-          <LeagueStanding standings={roundRobinStandings} />
-          <WeeklySchedule matches={mockRoundRobinMatches} teams={mockTeams} />
-        </div>
-      )}
-
-      {viewMode === "STATS_KO" && (
-        <div className="space-y-6">
-          <TournamentBracket matches={mockKnockoutMatches} teams={mockTeams} />
         </div>
       )}
     </section>
