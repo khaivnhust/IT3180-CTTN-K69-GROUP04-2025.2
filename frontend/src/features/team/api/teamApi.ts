@@ -172,3 +172,12 @@ export const leaveTeam = async (teamId: number): Promise<void> => {
     throw error;
   }
 };
+
+export const joinTeam = async (teamId: number): Promise<void> => {
+  try {
+    await apiClient.post(`/teams/${teamId}/join`);
+  } catch (error) {
+    logApiError("joinTeam", error, { teamId });
+    throw error;
+  }
+};

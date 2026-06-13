@@ -15,6 +15,8 @@ import com.kstn.group4.backend.exception.ResourceNotFoundException;
 import com.kstn.group4.backend.match.entity.Match;
 import com.kstn.group4.backend.match.repository.MatchRepository;
 import com.kstn.group4.backend.notification.event.TeamInvitationCreatedEvent;
+import com.kstn.group4.backend.notification.service.NotificationService;
+import com.kstn.group4.backend.notification.entity.NotificationType;
 import com.kstn.group4.backend.team.dto.CreateTeamRequest;
 import com.kstn.group4.backend.team.dto.TeamMemberResponse;
 import com.kstn.group4.backend.team.dto.TeamResponse;
@@ -41,6 +43,7 @@ public class TeamService {
     private final MatchRepository matchRepository;
     private final ActivityLogService activityLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
     @Transactional
     public TeamResponse createTeam(UserPrincipal userPrincipal, CreateTeamRequest request) {
@@ -377,6 +380,17 @@ public class TeamService {
         // 4. Chuyển trạng thái sang ACTIVE
         targetMember.setStatus(TeamMemberStatus.ACTIVE);
         teamMemberRepository.save(targetMember);
+
+        // 5. Cập nhật teamId cho user
+        var userOpt = userRepository.findByEmail(email.trim());
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setTeamId(teamId);
+            userRepository.save(user);
+
+            // 6. Dọn dẹp tất cả các lời mời hoặc yêu cầu gia nhập khác
+            teamMemberRepository.deletePendingMembershipsByEmail(email.trim());
+        }
     }
 
     /**
@@ -441,6 +455,46 @@ public class TeamService {
             user.setTeamId(null);
             userRepository.save(user);
         }
+    }
+
+    @Transactional
+    public void joinTeam(UserPrincipal userPrincipal, Long teamId) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "User"));
+
+        if (user.getTeamId() != null) {
+            throw new BusinessException("Bạn đã thuộc một đội bóng khác!");
+        }
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
+
+        if (team.getStatus() != TeamStatus.APPROVED) {
+            throw new BusinessException("Đội bóng chưa được phê duyệt hoạt động!");
+        }
+
+        // Kiểm tra xem đã gửi yêu cầu hoặc đã ở trong đội chưa
+        List<TeamMember> currentMembers = teamMemberRepository.findByTeamId(teamId);
+        boolean isAlreadyInTeam = currentMembers.stream()
+                .anyMatch(m -> m.getId().getUserEmail().equalsIgnoreCase(user.getEmail()));
+
+        if (isAlreadyInTeam) {
+            throw new BusinessException("Bạn đã gửi yêu cầu gia nhập hoặc đã tham gia đội bóng này trước đó!");
+        }
+
+        // Tạo bản ghi TeamMember mới với status là REQUESTED
+        TeamMember newMember = new TeamMember(team, user.getEmail(), TeamMemberStatus.REQUESTED);
+        teamMemberRepository.save(newMember);
+
+        // Gửi thông báo đến Đội trưởng qua NotificationService
+        notificationService.createNotification(
+                team.getCaptain().getId(),
+                NotificationType.TEAM_INVITATION,
+                "Yêu cầu gia nhập đội bóng",
+                user.getUsername() + " đã gửi yêu cầu gia nhập đội bóng " + team.getName() + " của bạn.",
+                "TEAM",
+                team.getId().toString()
+        );
     }
 
     private void publishTeamInvitations(Team team, String captainName, List<User> invitedUsers) {

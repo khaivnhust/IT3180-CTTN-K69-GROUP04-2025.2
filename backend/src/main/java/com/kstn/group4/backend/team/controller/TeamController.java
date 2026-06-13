@@ -113,4 +113,18 @@ public class TeamController {
         teamService.leaveTeam(userPrincipal, teamId);
         return ResponseEntity.ok("Đã rời khỏi đội bóng!");
     }
+
+    /**
+     * API: Yêu cầu gia nhập đội bóng
+     * POST /teams/{teamId}/join
+     */
+    @PostMapping("/{teamId}/join")
+    @PreAuthorize("hasAnyAuthority('PLAYER', 'ROLE_PLAYER', 'ADMIN', 'ROLE_ADMIN')")
+    public ResponseEntity<String> joinTeam(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long teamId
+    ) {
+        teamService.joinTeam(userPrincipal, teamId);
+        return ResponseEntity.ok("Gửi yêu cầu gia nhập đội bóng thành công!");
+    }
 }

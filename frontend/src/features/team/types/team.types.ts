@@ -1,5 +1,5 @@
 export type TeamStatus = "PENDING" | "APPROVED" | "REJECTED" | "BANNED";
-export type TeamMemberStatus = "INVITED" | "ACTIVE";
+export type TeamMemberStatus = "INVITED" | "ACTIVE" | "REQUESTED";
 
 export interface TeamMember {
   email: string;

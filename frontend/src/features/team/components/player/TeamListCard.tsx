@@ -1,13 +1,55 @@
 import type { Team } from "../../types/team.types";
 import { User, Award, Users } from "lucide-react";
+import { useAuthContext } from "@/features/auth/hooks/useAuthContext";
+import { joinTeam } from "../../api/teamApi";
+import { toast } from "@/shared/utils/toast";
+import { useState } from "react";
+import { getApiErrorMessage } from "@/shared/utils/apiError";
 
 interface TeamListCardProps {
   team: Team;
 }
 
 export function TeamListCard({ team }: TeamListCardProps) {
-  const handleJoinRequest = () => {
-    alert("Tính năng gửi yêu cầu gia nhập đội bóng đang được phát triển.");
+  const { user, isAuthenticated } = useAuthContext();
+  const [isJoining, setIsJoining] = useState(false);
+  const [hasSentRequest, setHasSentRequest] = useState(false);
+
+  const currentUserEmail = user?.email?.toLowerCase() || "";
+  const isPendingRequest = hasSentRequest || team.members?.some(
+    (m) => m.email.toLowerCase() === currentUserEmail && m.status === "REQUESTED"
+  );
+  const isInvited = team.members?.some(
+    (m) => m.email.toLowerCase() === currentUserEmail && m.status === "INVITED"
+  );
+
+  let buttonText = "Xin gia nhập";
+  let isButtonDisabled = false;
+
+  if (isPendingRequest) {
+    buttonText = "Đang chờ duyệt";
+    isButtonDisabled = true;
+  } else if (isInvited) {
+    buttonText = "Đã được mời";
+    isButtonDisabled = true;
+  }
+
+  const handleJoinRequest = async () => {
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để thực hiện tính năng này!");
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      await joinTeam(team.id);
+      toast.success("Gửi yêu cầu gia nhập đội bóng thành công!");
+      setHasSentRequest(true);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Gửi yêu cầu gia nhập thất bại!"));
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   return (
@@ -47,9 +89,14 @@ export function TeamListCard({ team }: TeamListCardProps) {
         <button
           type="button"
           onClick={handleJoinRequest}
-          className="w-full rounded-full bg-white hover:bg-emerald-50 border-2 border-black/60 py-2 text-center text-xs font-extrabold uppercase text-[#0B582A] transition duration-200 active:scale-[0.98]"
+          disabled={isButtonDisabled || isJoining}
+          className={`w-full rounded-full py-2 text-center text-xs font-extrabold uppercase border-2 border-black/60 transition duration-200 ${
+            isButtonDisabled || isJoining
+              ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+              : "bg-white hover:bg-emerald-50 text-[#0B582A] active:scale-[0.98]"
+          }`}
         >
-          Xin gia nhập
+          {isJoining ? "Đang gửi..." : buttonText}
         </button>
       </div>
     </div>

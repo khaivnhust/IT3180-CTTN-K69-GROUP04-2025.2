@@ -11,4 +11,8 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, TeamMemb
     List<TeamMember> findByTeamId(Long teamId);
     List<TeamMember> findByTeamIdIn(List<Long> teamIds);
     void deleteByTeamId(Long teamId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM TeamMember tm WHERE LOWER(tm.id.userEmail) = LOWER(:email) AND tm.status <> com.kstn.group4.backend.team.enums.TeamMemberStatus.ACTIVE")
+    void deletePendingMembershipsByEmail(String email);
 }

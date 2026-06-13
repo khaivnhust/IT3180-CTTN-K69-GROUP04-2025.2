@@ -19,7 +19,7 @@ import { saveTokenToStorage, getUserFromStorage } from "@/shared/utils/tokenStor
 
 export function ProfilePage() {
   const queryClient = useQueryClient();
-  const { checkAuth } = useAuthContext();
+  const { user, checkAuth } = useAuthContext();
   const { userInfo, loadingUser, userError } = usePlayerProfile();
   const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
@@ -58,8 +58,9 @@ export function ProfilePage() {
     isLoading: loadingHistory,
     error: historyQueryError,
   } = useQuery({
-    queryKey: ["playerBookings"],
+    queryKey: ["playerBookings", user?.email],
     queryFn: getPlayerBookings,
+    enabled: !!user?.token,
     staleTime: 2 * 60 * 1000,
   });
 

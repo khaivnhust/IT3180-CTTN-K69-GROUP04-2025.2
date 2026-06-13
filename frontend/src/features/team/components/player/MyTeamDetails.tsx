@@ -294,7 +294,7 @@ export function MyTeamDetails({ team, currentUserEmail, onRefresh }: MyTeamDetai
               {members.map((member, idx) => {
                 const email = member.email;
                 const isCaptainEmail = normalizeEmail(email) === normalizeEmail(captainEmail);
-                const isPending = member.status === "INVITED";
+                const isPending = member.status === "INVITED" || member.status === "REQUESTED";
 
                 return (
                   <div
@@ -314,9 +314,14 @@ export function MyTeamDetails({ team, currentUserEmail, onRefresh }: MyTeamDetai
                             Đội trưởng
                           </span>
                         )}
-                        {!isCaptainEmail && isPending && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold text-slate-600 border border-slate-200">
-                            Chờ duyệt
+                        {!isCaptainEmail && member.status === "INVITED" && (
+                          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-extrabold text-blue-600 border border-blue-200">
+                            Đã mời
+                          </span>
+                        )}
+                        {!isCaptainEmail && member.status === "REQUESTED" && (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-extrabold text-amber-700 border border-amber-200">
+                            Xin gia nhập
                           </span>
                         )}
                       </div>
