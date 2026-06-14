@@ -3,5 +3,7 @@ package com.kstn.group4.backend.notification.entity;
 public enum NotificationType {
     BOOKING_STATUS,
     TEAM_INVITATION,
-    MATCH_SCHEDULE
+    MATCH_SCHEDULE,
+    TEAM_STATUS,
+    ADMIN_ALERT
 }

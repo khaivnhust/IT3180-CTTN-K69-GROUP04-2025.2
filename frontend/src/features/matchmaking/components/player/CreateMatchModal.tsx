@@ -173,11 +173,14 @@ export function CreateMatchModal({ onClose, onSuccess }: CreateMatchModalProps) 
               required
               value={skillLevel}
               onChange={(e) => setSkillLevel(e.target.value as MatchSkillLevel)}
-              className="w-full rounded-xl border border-white/15 bg-[#032e1a] px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-xl border border-white/15 bg-[#032e1a] px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             >
-              <option value="WEAK">Phong trào (Yếu)</option>
+              <option value="WEAK">Yếu</option>
+              <option value="BELOW_AVERAGE">Trung bình yếu</option>
               <option value="AVERAGE">Trung bình</option>
-              <option value="GOOD">Khá / Mạnh</option>
+              <option value="ABOVE_AVERAGE">Trung bình khá</option>
+              <option value="GOOD">Cao</option>
+              <option value="SEMI_PRO">Bán chuyên</option>
             </select>
           </div>
 

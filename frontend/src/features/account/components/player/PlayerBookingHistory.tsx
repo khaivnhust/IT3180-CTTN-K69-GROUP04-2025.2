@@ -12,6 +12,8 @@ interface PlayerBookingHistoryProps {
   onSubmitReview?: (bookingId: number, rating: number, content: string) => Promise<void> | void;
   reviewingBookingId?: number | null;
   isTab?: boolean;
+  onCancelBooking?: (bookingId: number) => Promise<void> | void;
+  cancellingBookingId?: number | null;
 }
 
 export function PlayerBookingHistory({
@@ -23,6 +25,8 @@ export function PlayerBookingHistory({
   onSubmitReview,
   reviewingBookingId = null,
   isTab = false,
+  onCancelBooking,
+  cancellingBookingId = null,
 }: PlayerBookingHistoryProps) {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [reviewTarget, setReviewTarget] = useState<PlayerBookingHistoryItem | null>(null);
@@ -30,7 +34,7 @@ export function PlayerBookingHistory({
   const filteredHistory = history.filter((item) => {
     if (statusFilter === "ALL") return true;
     if (statusFilter === "PENDING_RESERVED") {
-      return item.status === "PENDING" || item.status === "RESERVED";
+      return item.status === "PENDING" || item.status === "RESERVED" || item.status === "PENDING_PAYMENT";
     }
     if (statusFilter === "CONFIRMED_BOOKED") {
       return item.status === "CONFIRMED" || item.status === "BOOKED";
@@ -74,7 +78,7 @@ export function PlayerBookingHistory({
                 className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-[#2E7D1E]"
               >
                 <option value="ALL">Tất cả</option>
-                <option value="PENDING_RESERVED">Chờ xác nhận</option>
+                <option value="PENDING_RESERVED">Chờ xác nhận/thanh toán</option>
                 <option value="CONFIRMED_BOOKED">Đã đặt</option>
                 <option value="COMPLETED">Hoàn thành</option>
                 <option value="PLAYING">Đang đá</option>
@@ -134,6 +138,7 @@ export function PlayerBookingHistory({
                     <span
                       className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide border
                         ${(item.status === "PENDING" || item.status === "RESERVED") ? "bg-yellow-50 text-yellow-700 border-yellow-200" : ""}
+                        ${item.status === "PENDING_PAYMENT" ? "bg-amber-50 text-amber-700 border-amber-200" : ""}
                         ${(item.status === "CONFIRMED" || item.status === "BOOKED") ? "bg-emerald-50 text-emerald-700 border-emerald-200" : ""}
                         ${item.status === "COMPLETED" ? "bg-blue-50 text-blue-700 border-blue-200" : ""}
                         ${item.status === "PLAYING" ? "bg-[#e0f2fe] text-[#0369a1] border-[#bae6fd]" : ""}
@@ -141,11 +146,25 @@ export function PlayerBookingHistory({
                       `}
                     >
                       {(item.status === "PENDING" || item.status === "RESERVED") && "Chờ xác nhận"}
+                      {item.status === "PENDING_PAYMENT" && "Chờ thanh toán"}
                       {(item.status === "CONFIRMED" || item.status === "BOOKED") && "Đã đặt"}
                       {item.status === "COMPLETED" && "Hoàn thành"}
                       {item.status === "PLAYING" && "Đang đá"}
                       {item.status === "CANCELLED" && "Đã hủy"}
                     </span>
+                    {(item.status === "PENDING_PAYMENT" || item.status === "RESERVED") && onCancelBooking && (
+                      <button
+                        type="button"
+                        onClick={() => onCancelBooking(item.id)}
+                        disabled={cancellingBookingId === item.id}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {cancellingBookingId === item.id && (
+                          <Loader2 size={14} className="animate-spin mr-1" />
+                        )}
+                        Hủy đặt sân
+                      </button>
+                    )}
                     {item.status === "COMPLETED" && onSubmitReview && (
                       item.reviewed ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">

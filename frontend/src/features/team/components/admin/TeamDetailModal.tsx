@@ -94,6 +94,32 @@ export function TeamDetailModal({
                     {getStatusMeta(team.status).label}
                   </span>
                 </p>
+                {team.skillLevel && (
+                  <p className="flex items-center gap-1.5 text-sm text-white/80">
+                    <span className="w-3.5 h-3.5 block bg-amber-400 rounded-full shrink-0" />
+                    Trình độ đội:{" "}
+                    <span className="font-extrabold text-amber-400">
+                      {(() => {
+                        switch (team.skillLevel) {
+                          case "WEAK":
+                            return "Yếu";
+                          case "BELOW_AVERAGE":
+                            return "Trung bình yếu";
+                          case "AVERAGE":
+                            return "Trung bình";
+                          case "ABOVE_AVERAGE":
+                            return "Trung bình khá";
+                          case "GOOD":
+                            return "Cao";
+                          case "SEMI_PRO":
+                            return "Bán chuyên";
+                          default:
+                            return team.skillLevel;
+                        }
+                      })()}
+                    </span>
+                  </p>
+                )}
                 {team.status === "BANNED" && team.bannedUntil && (
                   <p className="text-xs text-rose-300 font-medium pl-5">
                     Cấm thi đấu đến: {new Date(team.bannedUntil).toLocaleString("vi-VN")}

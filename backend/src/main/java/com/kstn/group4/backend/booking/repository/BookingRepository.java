@@ -168,4 +168,10 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             @Param("venueId") Integer venueId,
             @Param("managerId") Integer managerId
     );
+
+    @Query("SELECT b FROM Booking b " +
+            "WHERE b.status = com.kstn.group4.backend.booking.entity.BookingStatus.RESERVED " +
+            "AND b.pointsRedeemedAt IS NULL " +
+            "AND b.createdAt < :threshold")
+    List<Booking> findExpiredReservedBookings(@Param("threshold") java.time.LocalDateTime threshold);
 }

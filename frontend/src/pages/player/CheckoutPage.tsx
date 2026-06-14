@@ -6,6 +6,7 @@ import { PointsRedemptionBox } from "@/features/payment/components/PointsRedempt
 import { usePlayerProfile } from "@/features/account/hooks/usePlayerProfile";
 import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
+import { cancelUnpaidBooking } from "@/features/booking/api/bookingApi";
 
 const POINT_VALUE = 100;
 
@@ -33,13 +34,14 @@ export const CheckoutPage = () => {
 
   // Expecting booking details passed via location.state
   const bookingData = location.state?.bookingData || null;
-  const originalAmount = toNumber(bookingData?.totalPrice);
+  const totalPrice = toNumber(bookingData?.totalPrice);
+  const depositAmount = totalPrice * 0.5; // Chỉ thanh toán 50% tiền cọc
   const availablePoints = userInfo?.membershipPoints ?? 0;
-  const maxPointsByAmount = Math.max(0, Math.ceil(originalAmount / POINT_VALUE) - 1);
+  const maxPointsByAmount = Math.max(0, Math.ceil(depositAmount / POINT_VALUE) - 1);
   const maxRedeemablePoints = Math.min(availablePoints, maxPointsByAmount);
   const safePointsToUse = Math.min(pointsToUse, maxRedeemablePoints);
   const discountAmount = safePointsToUse * POINT_VALUE;
-  const payableAmount = Math.max(0, originalAmount - discountAmount);
+  const payableAmount = Math.max(0, depositAmount - discountAmount);
 
   if (!bookingData) {
     return (
@@ -50,12 +52,26 @@ export const CheckoutPage = () => {
     );
   }
 
+  const handleGoBack = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const ids = String(bookingData.bookingId).split("-");
+      await Promise.all(ids.map(id => cancelUnpaidBooking(parseInt(id, 10))));
+    } catch (error) {
+      console.error("Lỗi khi hủy đơn đặt sân", error);
+    } finally {
+      setIsLoading(false);
+      navigate("/booking");
+    }
+  };
+
   const handlePayment = async () => {
     setIsLoading(true);
     try {
       const payment = await createVNPayUrl(
         bookingData.bookingId,
-        originalAmount,
+        depositAmount,
         safePointsToUse,
       );
       window.location.href = payment.paymentUrl; // Redirect to VNPay
@@ -69,8 +85,9 @@ export const CheckoutPage = () => {
   return (
     <div className="container mx-auto p-4 max-w-2xl mt-10">
       <button
-        onClick={() => navigate(-1)}
-        className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+        onClick={handleGoBack}
+        disabled={isLoading}
+        className="flex items-center text-gray-600 hover:text-gray-900 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
         Quay lại
@@ -113,7 +130,7 @@ export const CheckoutPage = () => {
           </div>
           <PointsRedemptionBox
             availablePoints={availablePoints}
-            originalAmount={originalAmount}
+            originalAmount={depositAmount}
             pointsToUse={safePointsToUse}
             onPointsChange={setPointsToUse}
             disabled={loadingUser || isLoading}
@@ -121,9 +138,15 @@ export const CheckoutPage = () => {
 
           <div className="space-y-2 pt-2">
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Tạm tính:</span>
+              <span>Tổng tiền sân:</span>
               <span className="font-semibold text-gray-900">
-                {formatCurrency(originalAmount)}
+                {formatCurrency(totalPrice)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-600 border-b border-gray-100 pb-2">
+              <span>Tiền cọc cần trả (50%):</span>
+              <span className="font-semibold text-gray-900">
+                {formatCurrency(depositAmount)}
               </span>
             </div>
             {safePointsToUse > 0 ? (
@@ -136,11 +159,15 @@ export const CheckoutPage = () => {
             ) : null}
             <div className="flex justify-between border-t border-gray-100 pt-3">
               <span className="text-lg font-bold text-gray-800">
-                Tổng thanh toán:
+                Tiền đặt cọc VNPay:
               </span>
               <span className="text-xl font-bold text-[#1a5f7a]">
                 {formatCurrency(payableAmount)}
               </span>
+            </div>
+            <div className="flex justify-between border-t border-dashed border-gray-200 pt-2 text-xs text-gray-500">
+              <span>Còn lại (thanh toán tại sân sau khi đá):</span>
+              <span>{formatCurrency(totalPrice - depositAmount)}</span>
             </div>
           </div>
         </div>

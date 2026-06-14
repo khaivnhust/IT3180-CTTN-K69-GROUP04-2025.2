@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getPlayerBookings, updatePlayerProfile } from "../../features/account/api/account.api";
 import { createPitchReview } from "@/features/venue/api/venueApi";
+import { cancelUnpaidBooking } from "@/features/booking/api/bookingApi";
 import { getApiErrorMessage, logApiError } from "@/shared/utils/apiError";
 import { toast } from "../../shared/utils/toast";
 import { Loader2 } from "lucide-react";
@@ -19,7 +20,7 @@ import { saveTokenToStorage, getUserFromStorage } from "@/shared/utils/tokenStor
 
 export function ProfilePage() {
   const queryClient = useQueryClient();
-  const { checkAuth } = useAuthContext();
+  const { user, checkAuth } = useAuthContext();
   const { userInfo, loadingUser, userError } = usePlayerProfile();
   const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
@@ -58,8 +59,9 @@ export function ProfilePage() {
     isLoading: loadingHistory,
     error: historyQueryError,
   } = useQuery({
-    queryKey: ["playerBookings"],
+    queryKey: ["playerBookings", user?.email],
     queryFn: getPlayerBookings,
+    enabled: !!user?.token,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -106,6 +108,19 @@ export function ProfilePage() {
     onError: (err) => {
       logApiError("ProfilePage.createPitchReview", err);
       toast.error(getApiErrorMessage(err, "Không thể gửi đánh giá."));
+    },
+  });
+
+  const cancelBookingMutation = useMutation({
+    mutationFn: cancelUnpaidBooking,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["playerBookings"] });
+      void queryClient.invalidateQueries({ queryKey: ["playerProfile"] });
+      toast.success("Hủy đặt sân thành công, ca sân đã được giải phóng!");
+    },
+    onError: (err) => {
+      logApiError("ProfilePage.cancelBooking", err);
+      toast.error(getApiErrorMessage(err, "Không thể hủy đặt sân."));
     },
   });
 
@@ -179,6 +194,12 @@ export function ProfilePage() {
                   }}
                   reviewingBookingId={
                     reviewMutation.isPending ? reviewMutation.variables?.bookingId ?? null : null
+                  }
+                  onCancelBooking={async (bookingId) => {
+                    await cancelBookingMutation.mutateAsync(bookingId);
+                  }}
+                  cancellingBookingId={
+                    cancelBookingMutation.isPending ? cancelBookingMutation.variables ?? null : null
                   }
                   isTab={true}
                 />

@@ -2,6 +2,7 @@ package com.kstn.group4.backend.team.entity;
 
 import com.kstn.group4.backend.user.entity.User;
 import com.kstn.group4.backend.team.enums.TeamStatus;
+import com.kstn.group4.backend.match.enums.MatchSkillLevel;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -34,6 +35,10 @@ public class Team {
     @Column(nullable = false)
     private TeamStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "skill_level", nullable = false)
+    private MatchSkillLevel skillLevel;
+
     @Column(name = "banned_until")
     private LocalDateTime bannedUntil;
 
@@ -44,6 +49,7 @@ public class Team {
         this.createdAt = LocalDateTime.now();
         this.reputationScore = 100;
         this.status = TeamStatus.PENDING;
+        this.skillLevel = MatchSkillLevel.AVERAGE;
         this.bannedUntil = null;
     }
 }

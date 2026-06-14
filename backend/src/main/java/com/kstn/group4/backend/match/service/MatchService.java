@@ -142,6 +142,27 @@ public class MatchService {
         Venue venue = venueRepository.findById(request.getVenueId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khu sân với ID: " + request.getVenueId(), "Venue"));
 
+        PitchType pitchTypeEnum = switch (request.getPitchType()) {
+            case 5 -> PitchType.SAN_5;
+            case 7 -> PitchType.SAN_7;
+            case 11 -> PitchType.SAN_11;
+            default -> throw new BusinessException("Loại sân không hợp lệ");
+        };
+
+        if (!pitchRepository.existsByVenueIdAndPitchTypeAndIsActiveTrue(request.getVenueId(), pitchTypeEnum)) {
+            throw new BusinessException("Cụm sân này không có loại sân bạn yêu cầu hoặc sân đang bảo trì");
+        }
+
+        List<Pitch> availablePitches = pitchRepository.findAvailablePitches(
+                request.getVenueId(),
+                pitchTypeEnum,
+                request.getMatchDate(),
+                request.getTimeSlotId()
+        );
+        if (availablePitches.isEmpty()) {
+            throw new BusinessException("Loại sân này đã được đặt hết trong khung giờ đã chọn");
+        }
+
         Match match = new Match();
         match.setVenue(venue);
         match.setHostTeam(hostTeam);
@@ -200,12 +221,15 @@ public class MatchService {
 
             for (Match m : history) {
                 // Skill Level
-                double skillVal = 2.0;
+                double skillVal = 3.0;
                 if (m.getSkillLevel() != null) {
                     skillVal = switch (m.getSkillLevel()) {
                         case WEAK -> 1.0;
-                        case AVERAGE -> 2.0;
-                        case GOOD -> 3.0;
+                        case BELOW_AVERAGE -> 2.0;
+                        case AVERAGE -> 3.0;
+                        case ABOVE_AVERAGE -> 4.0;
+                        case GOOD -> 5.0;
+                        case SEMI_PRO -> 6.0;
                     };
                 }
                 skillSum += skillVal;
@@ -247,7 +271,17 @@ public class MatchService {
             }
         }
 
-        final Double finalAvgSkillLevel = (avgSkillLevel != null) ? avgSkillLevel : getDefaultSkillLevel(teamName, teamDesc);
+        final Double finalAvgSkillLevel = (avgSkillLevel != null) ? avgSkillLevel : 
+            (userTeam != null && userTeam.getSkillLevel() != null ? 
+                switch (userTeam.getSkillLevel()) {
+                    case WEAK -> 1.0;
+                    case BELOW_AVERAGE -> 2.0;
+                    case AVERAGE -> 3.0;
+                    case ABOVE_AVERAGE -> 4.0;
+                    case GOOD -> 5.0;
+                    case SEMI_PRO -> 6.0;
+                } : getDefaultSkillLevel(teamName, teamDesc)
+            );
         final Double finalAvgSlotNumber = (avgSlotNumber != null) ? avgSlotNumber : getDefaultSlotNumber(teamName, teamDesc);
         final Long finalMaxVenueCount = maxVenueCount;
         final Venue finalFavoriteVenue = favoriteVenue;
@@ -315,10 +349,13 @@ public class MatchService {
         if (m.getSkillLevel() != null) {
             double candSkillVal = switch (m.getSkillLevel()) {
                 case WEAK -> 1.0;
-                case AVERAGE -> 2.0;
-                case GOOD -> 3.0;
+                case BELOW_AVERAGE -> 2.0;
+                case AVERAGE -> 3.0;
+                case ABOVE_AVERAGE -> 4.0;
+                case GOOD -> 5.0;
+                case SEMI_PRO -> 6.0;
             };
-            skillScore = 1.0 - (Math.abs(candSkillVal - avgSkillLevel) / 2.0);
+            skillScore = 1.0 - (Math.abs(candSkillVal - avgSkillLevel) / 5.0);
         }
 
         // 3. Time Slot Similarity
@@ -365,9 +402,9 @@ public class MatchService {
             return 1.0;
         }
         if (combined.contains("mạnh") || combined.contains("cứng") || combined.contains("pro") || combined.contains("khá") || combined.contains("giỏi") || combined.contains("good")) {
-            return 3.0;
+            return 5.0;
         }
-        return 2.0;
+        return 3.0;
     }
 
     private double getDefaultSlotNumber(String teamName, String teamDesc) {
@@ -433,6 +470,8 @@ public class MatchService {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "User"));
 
+        Booking booking = null;
+
         if (matchRequest.getStatus() == MatchRequestStatus.PENDING_GUEST_CAPTAIN) {
             // Must be Guest Team Captain
             if (!matchRequest.getGuestTeam().getCaptain().getId().equals(user.getId())) {
@@ -475,7 +514,7 @@ public class MatchService {
             Pitch selectedPitch = availablePitches.get(0);
 
             // Create auto-booking with CONFIRMED status and calculated price
-            Booking booking = bookingService.createMatchAutoBooking(
+            booking = bookingService.createMatchAutoBooking(
                     match.getHostTeam().getCaptain().getId(),
                     selectedPitch.getId(),
                     match.getTimeSlot().getId(),
@@ -505,7 +544,12 @@ public class MatchService {
             throw new BusinessException("Yêu cầu này đã được xử lý (APPROVED hoặc REJECTED)");
         }
 
-        return mapToResponse(matchRequest.getMatch());
+        MatchResponse response = mapToResponse(matchRequest.getMatch());
+        if (booking != null) {
+            response.setBookingId(booking.getId());
+            response.setPrice(booking.getTotalPrice());
+        }
+        return response;
     }
 
     @Transactional(readOnly = true)

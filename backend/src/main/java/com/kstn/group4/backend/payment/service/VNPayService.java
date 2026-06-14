@@ -26,6 +26,12 @@ import java.time.LocalDateTime;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import com.kstn.group4.backend.booking.entity.BookingStatus;
+import com.kstn.group4.backend.notification.entity.NotificationType;
+import com.kstn.group4.backend.notification.event.BookingStatusChangedEvent;
+import com.kstn.group4.backend.notification.service.NotificationService;
+import org.springframework.context.ApplicationEventPublisher;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,6 +41,8 @@ public class VNPayService {
 
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
     @Value("${vnpay.tmn-code}")
     private String tmnCode;
@@ -54,41 +62,69 @@ public class VNPayService {
      */
     @Transactional
     public CreatePaymentResponse buildPaymentUrl(CreatePaymentRequest request, HttpServletRequest httpRequest, Integer payerId) {
-        Booking booking = bookingRepository.findByIdWithDetails(request.bookingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt sân", "Booking"));
-
-        if (booking.getPlayer() == null || !booking.getPlayer().getId().equals(payerId)) {
-            throw new ForbiddenException("Bạn không có quyền thanh toán đơn đặt sân này");
+        String bookingIdStr = request.bookingId();
+        if (bookingIdStr == null || bookingIdStr.isBlank()) {
+            throw new BusinessException("Mã đơn đặt sân không được để trống", "INVALID_BOOKING_ID");
         }
 
-        if (booking.getPointsRedeemedAt() != null) {
-            throw new BusinessException("Đơn đặt sân này đã được xác nhận thanh toán", "BOOKING_ALREADY_PAID");
+        List<Integer> bookingIds = new ArrayList<>();
+        if (bookingIdStr.contains("-")) {
+            for (String part : bookingIdStr.split("-")) {
+                bookingIds.add(Integer.valueOf(part.trim()));
+            }
+        } else {
+            bookingIds.add(Integer.valueOf(bookingIdStr.trim()));
+        }
+
+        List<Booking> bookings = new ArrayList<>();
+        for (Integer id : bookingIds) {
+            Booking b = bookingRepository.findByIdWithDetails(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt sân với ID: " + id, "Booking"));
+            bookings.add(b);
+        }
+
+        for (Booking b : bookings) {
+            if (b.getPlayer() == null || !b.getPlayer().getId().equals(payerId)) {
+                throw new ForbiddenException("Bạn không có quyền thanh toán đơn đặt sân này");
+            }
+            if (b.getPointsRedeemedAt() != null) {
+                throw new BusinessException("Đơn đặt sân này đã được xác nhận thanh toán", "BOOKING_ALREADY_PAID");
+            }
         }
 
         User payer = userRepository.findById(payerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "User"));
 
         int pointsToUse = request.pointsToUse() != null ? request.pointsToUse() : 0;
-        BigDecimal originalAmount = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal discountAmount = calculateDiscountAmount(pointsToUse, originalAmount, payer);
-        BigDecimal payableAmount = originalAmount.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal totalBookingPrice = BigDecimal.ZERO;
+        for (Booking b : bookings) {
+            totalBookingPrice = totalBookingPrice.add(b.getTotalPrice() != null ? b.getTotalPrice() : BigDecimal.ZERO);
+        }
+
+        BigDecimal depositAmount = totalBookingPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal discountAmount = calculateDiscountAmount(pointsToUse, depositAmount, payer);
+        BigDecimal payableAmount = depositAmount.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
 
         if (payableAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("Số điểm sử dụng phải nhỏ hơn tổng tiền thanh toán", "INVALID_POINTS_REDEMPTION");
         }
 
-        booking.setPointsUsed(pointsToUse);
-        booking.setPointsDiscountAmount(discountAmount);
-        booking.setPointsRedeemedAt(null);
-        bookingRepository.save(booking);
+        Booking firstBooking = bookings.get(0);
+        firstBooking.setPointsUsed(pointsToUse);
+        firstBooking.setPointsDiscountAmount(discountAmount);
 
-        String vnpTxnRef = String.valueOf(request.bookingId());
+        for (Booking b : bookings) {
+            b.setPointsRedeemedAt(null);
+            bookingRepository.save(b);
+        }
+
+        String vnpTxnRef = bookingIdStr + "_" + System.currentTimeMillis();
         long vnpAmount = payableAmount.longValue() * 100L;
 
         String vnpCreateDate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-        // Expire after 15 minutes
+        // Expire after 10 minutes
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-        cal.add(Calendar.MINUTE, 15);
+        cal.add(Calendar.MINUTE, 10);
         String vnpExpireDate = new SimpleDateFormat("yyyyMMddHHmmss").format(cal.getTime());
 
         String ipAddr = getClientIp(httpRequest);
@@ -162,44 +198,102 @@ public class VNPayService {
 
     @Transactional
     public boolean settleSuccessfulPayment(String txnRef, String rawVnpAmount) {
-        Integer bookingId;
+        String bookingIdStr = txnRef;
+        if (txnRef != null && txnRef.contains("_")) {
+            bookingIdStr = txnRef.split("_")[0];
+        }
+
+        List<Integer> bookingIds = new ArrayList<>();
         try {
-            bookingId = Integer.valueOf(txnRef);
+            if (bookingIdStr != null && bookingIdStr.contains("-")) {
+                for (String part : bookingIdStr.split("-")) {
+                    bookingIds.add(Integer.valueOf(part.trim()));
+                }
+            } else if (bookingIdStr != null) {
+                bookingIds.add(Integer.valueOf(bookingIdStr.trim()));
+            }
         } catch (NumberFormatException ex) {
-            log.warn("Cannot settle membership points because txnRef is invalid: {}", txnRef);
+            log.warn("Cannot settle payment because txnRef is invalid: {}", txnRef);
             return false;
         }
 
-        Booking booking = bookingRepository.findByIdWithDetails(bookingId).orElse(null);
-        if (booking == null) {
-            log.warn("Cannot settle membership points because booking {} was not found", bookingId);
+        if (bookingIds.isEmpty()) {
             return false;
         }
 
-        if (booking.getPointsRedeemedAt() != null) {
+        List<Booking> bookings = new ArrayList<>();
+        for (Integer id : bookingIds) {
+            Booking b = bookingRepository.findByIdWithDetails(id).orElse(null);
+            if (b == null) {
+                log.warn("Cannot settle payment because booking {} was not found", id);
+                return false;
+            }
+            bookings.add(b);
+        }
+
+        Booking firstBooking = bookings.get(0);
+        if (firstBooking.getPointsRedeemedAt() != null) {
             return true;
         }
 
-        int pointsUsed = booking.getPointsUsed() != null ? booking.getPointsUsed() : 0;
-        BigDecimal discountAmount = booking.getPointsDiscountAmount() != null
-                ? booking.getPointsDiscountAmount()
+        int pointsUsed = firstBooking.getPointsUsed() != null ? firstBooking.getPointsUsed() : 0;
+        BigDecimal discountAmount = firstBooking.getPointsDiscountAmount() != null
+                ? firstBooking.getPointsDiscountAmount()
                 : BigDecimal.ZERO;
 
-        if (!matchesExpectedAmount(booking, discountAmount, rawVnpAmount)) {
-            log.warn("VNPay amount does not match booking {} payable amount", bookingId);
+        if (!matchesExpectedAmount(bookings, discountAmount, rawVnpAmount)) {
+            log.warn("VNPay amount does not match booking list {} payable amount", bookingIdStr);
             return false;
         }
 
         if (pointsUsed > 0) {
-            Integer playerId = booking.getPlayer() != null ? booking.getPlayer().getId() : null;
+            Integer playerId = firstBooking.getPlayer() != null ? firstBooking.getPlayer().getId() : null;
             if (playerId == null || userRepository.deductMembershipPoints(playerId, pointsUsed) == 0) {
-                log.warn("Cannot deduct {} membership points for booking {}", pointsUsed, bookingId);
+                log.warn("Cannot deduct {} membership points for booking {}", pointsUsed, firstBooking.getId());
                 return false;
             }
         }
 
-        booking.setPointsRedeemedAt(LocalDateTime.now());
-        bookingRepository.save(booking);
+        LocalDateTime now = LocalDateTime.now();
+        for (Booking booking : bookings) {
+            BookingStatus oldStatus = booking.getStatus();
+            booking.setStatus(BookingStatus.BOOKED);
+            booking.setPointsRedeemedAt(now);
+            bookingRepository.save(booking);
+
+            if (oldStatus != BookingStatus.BOOKED) {
+                String pitchName = booking.getPitch() != null && booking.getPitch().getName() != null
+                        ? booking.getPitch().getName()
+                        : "N/A";
+                eventPublisher.publishEvent(new BookingStatusChangedEvent(
+                        booking.getId(),
+                        booking.getPlayer() != null ? booking.getPlayer().getId() : null,
+                        oldStatus,
+                        BookingStatus.BOOKED,
+                        pitchName,
+                        booking.getBookingDate(),
+                        booking.getStartTime()
+                ));
+            }
+        }
+
+        // Gửi thông báo cho Admin: có đơn đặt sân mới thanh toán cọc thành công
+        Booking notifBooking = bookings.get(0);
+        String pitchNameNotif = notifBooking.getPitch() != null && notifBooking.getPitch().getName() != null
+                ? notifBooking.getPitch().getName() : "N/A";
+        String dateNotif = notifBooking.getBookingDate() != null ? notifBooking.getBookingDate().toString() : "N/A";
+        String timeNotif = notifBooking.getStartTime() != null
+                ? notifBooking.getStartTime().toString().substring(0, 5) : "N/A";
+        notificationService.createNotificationForAdmins(
+                NotificationType.ADMIN_ALERT,
+                "Đơn đặt sân mới thành công",
+                "Đơn #" + notifBooking.getId() + " đặt sân " + pitchNameNotif
+                        + " ca " + timeNotif + " ngày " + dateNotif
+                        + " đã thanh toán cọc thành công.",
+                "BOOKING",
+                String.valueOf(notifBooking.getId())
+        );
+
         return true;
     }
 
@@ -225,13 +319,17 @@ public class VNPayService {
         return discountAmount.setScale(2, RoundingMode.HALF_UP);
     }
 
-    private boolean matchesExpectedAmount(Booking booking, BigDecimal discountAmount, String rawVnpAmount) {
+    private boolean matchesExpectedAmount(List<Booking> bookings, BigDecimal discountAmount, String rawVnpAmount) {
         if (rawVnpAmount == null || rawVnpAmount.isBlank()) {
             return false;
         }
 
-        BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal payableAmount = totalPrice.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        for (Booking booking : bookings) {
+            totalPrice = totalPrice.add(booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO);
+        }
+        BigDecimal depositAmount = totalPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal payableAmount = depositAmount.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
         String expectedVnpAmount = String.valueOf(payableAmount.longValue() * 100L);
         return expectedVnpAmount.equals(rawVnpAmount);
     }

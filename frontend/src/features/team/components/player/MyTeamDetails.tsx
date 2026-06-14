@@ -1,10 +1,11 @@
 import type { Team, TeamMember, TeamMemberStatus } from "../../types/team.types"; // Giữ nguyên type-only import chuẩn xác
-import { ShieldAlert, CheckCircle2, Users, User, Clock, Award, Mail, PlusCircle, Check, UserMinus, LogOut, Crown } from "lucide-react";
+import type { MatchSkillLevel } from "../../../matchmaking/types/matchmaking.types";
+import { ShieldAlert, CheckCircle2, Users, User, Clock, Award, Mail, PlusCircle, Check, UserMinus, LogOut, Crown, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { isAxiosError } from "axios";
-import { inviteMember, approveMember, kickMember, leaveTeam } from "../../api/teamApi";
+import { inviteMember, approveMember, kickMember, leaveTeam, updateTeam } from "../../api/teamApi";
 
 interface MyTeamDetailsProps {
   team: Team;
@@ -17,6 +18,61 @@ export function MyTeamDetails({ team, currentUserEmail, onRefresh }: MyTeamDetai
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(team.name);
+  const [editDescription, setEditDescription] = useState(team.description || "");
+  const [editSkillLevel, setEditSkillLevel] = useState<MatchSkillLevel>(team.skillLevel || "AVERAGE");
+  const [updatingDetails, setUpdatingDetails] = useState(false);
+
+  useEffect(() => {
+    setEditName(team.name);
+    setEditDescription(team.description || "");
+    setEditSkillLevel(team.skillLevel || "AVERAGE");
+  }, [team]);
+
+  const getSkillLevelLabel = (level: string) => {
+    switch (level) {
+      case "WEAK":
+        return "Yếu";
+      case "BELOW_AVERAGE":
+        return "Trung bình yếu";
+      case "AVERAGE":
+        return "Trung bình";
+      case "ABOVE_AVERAGE":
+        return "Trung bình khá";
+      case "GOOD":
+        return "Cao";
+      case "SEMI_PRO":
+        return "Bán chuyên";
+      default:
+        return level;
+    }
+  };
+
+  const handleSaveDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      showAlert("Tên đội bóng không được để trống.", "error");
+      return;
+    }
+
+    setUpdatingDetails(true);
+    try {
+      await updateTeam(team.id, {
+        name: editName.trim(),
+        description: editDescription.trim(),
+        skillLevel: editSkillLevel,
+      });
+      showAlert("Cập nhật thông tin đội bóng thành công!", "success");
+      setIsEditing(false);
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      showAlert(getActionErrorMessage(err, "Cập nhật thông tin thất bại"), "error");
+    } finally {
+      setUpdatingDetails(false);
+    }
+  };
 
   const normalizeEmail = (email?: string | null) => email?.trim().toLowerCase() ?? "";
   const members: TeamMember[] =
@@ -193,45 +249,131 @@ export function MyTeamDetails({ team, currentUserEmail, onRefresh }: MyTeamDetai
             </p>
           </div>
 
-          {!isCaptain && isCurrentMember && (
-            <button
-              type="button"
-              onClick={handleLeaveTeam}
-              disabled={loading}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-rose-200 bg-rose-50 px-4 py-2 text-sm font-extrabold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
-            >
-              <LogOut size={16} className="stroke-[3]" />
-              Rời đội
-            </button>
-          )}
-        </div>
+          <div className="flex items-center gap-2">
+            {isCaptain && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-black/60 bg-white px-4 py-2 text-sm font-extrabold text-gray-800 transition hover:bg-gray-50"
+              >
+                {isEditing ? "Hủy chỉnh sửa" : "Chỉnh sửa"}
+              </button>
+            )}
 
-        {/* Thông tin chung */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <Award size={24} className="text-[#F8B416]" />
-            <div>
-              <span className="block text-xs font-bold text-gray-500 uppercase">Điểm uy tín</span>
-              <span className="text-lg font-extrabold text-gray-800">{team.reputationScore} điểm</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <User size={24} className="text-[#005E2E]" />
-            <div>
-              <span className="block text-xs font-bold text-gray-500 uppercase">Đội trưởng</span>
-              <span className="text-lg font-extrabold text-gray-800">{team.captainName}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <Clock size={24} className="text-[#005E2E]" />
-            <div>
-              <span className="block text-xs font-bold text-gray-500 uppercase">Ngày thành lập</span>
-              <span className="text-lg font-extrabold text-gray-800">{formattedDate}</span>
-            </div>
+            {!isCaptain && isCurrentMember && (
+              <button
+                type="button"
+                onClick={handleLeaveTeam}
+                disabled={loading}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-rose-200 bg-rose-50 px-4 py-2 text-sm font-extrabold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
+              >
+                <LogOut size={16} className="stroke-[3]" />
+                Rời đội
+              </button>
+            )}
           </div>
         </div>
+
+        {isEditing ? (
+          <form onSubmit={handleSaveDetails} className="mt-6 space-y-4 border-b border-gray-200 pb-6">
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                Tên đội bóng <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded-xl border-2 border-black/40 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-[#005E2E] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                Trình độ đội bóng
+              </label>
+              <select
+                value={editSkillLevel}
+                onChange={(e) => setEditSkillLevel(e.target.value as MatchSkillLevel)}
+                className="w-full rounded-xl border-2 border-black/40 bg-white px-3 py-2 text-sm text-gray-800 focus:border-[#005E2E] focus:outline-none cursor-pointer"
+              >
+                <option value="WEAK">Yếu</option>
+                <option value="BELOW_AVERAGE">Trung bình yếu</option>
+                <option value="AVERAGE">Trung bình</option>
+                <option value="ABOVE_AVERAGE">Trung bình khá</option>
+                <option value="GOOD">Cao</option>
+                <option value="SEMI_PRO">Bán chuyên</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+                Thông tin / Tiểu sử đội bóng
+              </label>
+              <textarea
+                rows={3}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="w-full rounded-xl border-2 border-black/40 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-[#005E2E] focus:outline-none resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="rounded-full border-2 border-black/60 bg-white px-5 py-2 text-sm font-bold text-gray-800 transition hover:bg-gray-100"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={updatingDetails}
+                className="rounded-full bg-[#005E2E] hover:bg-[#004d26] px-6 py-2.5 text-sm font-extrabold uppercase text-white shadow-[0_4px_12px_rgba(0,94,46,0.25)] transition duration-200 disabled:opacity-50"
+              >
+                {updatingDetails ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* Thông tin chung */
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <Award size={24} className="text-[#F8B416]" />
+              <div>
+                <span className="block text-xs font-bold text-gray-500 uppercase">Điểm uy tín</span>
+                <span className="text-lg font-extrabold text-gray-800">{team.reputationScore} điểm</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <User size={24} className="text-[#005E2E]" />
+              <div>
+                <span className="block text-xs font-bold text-gray-500 uppercase">Đội trưởng</span>
+                <span className="text-lg font-extrabold text-gray-800">{team.captainName}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <Clock size={24} className="text-[#005E2E]" />
+              <div>
+                <span className="block text-xs font-bold text-gray-500 uppercase">Ngày thành lập</span>
+                <span className="text-lg font-extrabold text-gray-800">{formattedDate}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <Trophy size={24} className="text-[#005E2E]" />
+              <div>
+                <span className="block text-xs font-bold text-gray-500 uppercase">Trình độ</span>
+                <span className="text-lg font-extrabold text-gray-800">
+                  {getSkillLevelLabel(team.skillLevel || "AVERAGE")}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {(successMessage || errorMessage) && (
           <div className="mt-6 space-y-2">
@@ -294,7 +436,7 @@ export function MyTeamDetails({ team, currentUserEmail, onRefresh }: MyTeamDetai
               {members.map((member, idx) => {
                 const email = member.email;
                 const isCaptainEmail = normalizeEmail(email) === normalizeEmail(captainEmail);
-                const isPending = member.status === "INVITED";
+                const isPending = member.status === "INVITED" || member.status === "REQUESTED";
 
                 return (
                   <div
@@ -314,9 +456,14 @@ export function MyTeamDetails({ team, currentUserEmail, onRefresh }: MyTeamDetai
                             Đội trưởng
                           </span>
                         )}
-                        {!isCaptainEmail && isPending && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold text-slate-600 border border-slate-200">
-                            Chờ duyệt
+                        {!isCaptainEmail && member.status === "INVITED" && (
+                          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-extrabold text-blue-600 border border-blue-200">
+                            Đã mời
+                          </span>
+                        )}
+                        {!isCaptainEmail && member.status === "REQUESTED" && (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-extrabold text-amber-700 border border-amber-200">
+                            Xin gia nhập
                           </span>
                         )}
                       </div>

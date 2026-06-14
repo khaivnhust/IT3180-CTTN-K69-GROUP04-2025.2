@@ -13,7 +13,7 @@ interface CreatePaymentResult {
 }
 
 export const createVNPayUrl = async (
-  bookingId: number,
+  bookingId: number | string,
   amount: number,
   pointsToUse = 0,
 ): Promise<CreatePaymentResult> => {

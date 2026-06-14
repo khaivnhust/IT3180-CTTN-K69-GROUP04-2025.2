@@ -196,9 +196,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     CONSTRAINT `fk_bookings_pitch_id`
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
     CONSTRAINT `fk_bookings_time_slot_id`
-        FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`),
-    CONSTRAINT `uk_bookings_date_pitch_slot`
-        UNIQUE (`booking_date`, `pitch_id`, `time_slot_id`)
+        FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `pitch_reviews` (
@@ -258,6 +256,7 @@ CREATE TABLE IF NOT EXISTS `teams` (
     `status` VARCHAR(50) NOT NULL,
     `banned_until` DATETIME DEFAULT NULL,
     `created_at` DATETIME NOT NULL,
+    `skill_level` VARCHAR(50) DEFAULT 'AVERAGE',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_teams_captain_id`
         FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`)

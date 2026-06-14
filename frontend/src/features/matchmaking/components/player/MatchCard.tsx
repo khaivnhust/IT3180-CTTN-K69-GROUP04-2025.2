@@ -2,10 +2,12 @@ import { Calendar, MapPin, Users, CheckCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 import type { MatchResponse, MatchRequestResponse } from "../../types/matchmaking.types";
 import { useMatchStore } from "../../model/matchStore";
 import { getMatchRequests, approveMatchRequest } from "../../api/matchmakingApi";
+import { TeamDetailModal, getTeamById, type Team } from "../../../team";
 
 interface MatchCardProps {
   match: MatchResponse;
@@ -13,6 +15,7 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, userTeamId }: MatchCardProps) {
+  const navigate = useNavigate();
   const joinMatchAction = useMatchStore((state) => state.joinMatchAction);
   const fetchMatches = useMatchStore((state) => state.fetchMatches);
   const [isJoining, setIsJoining] = useState(false);
@@ -20,15 +23,34 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
   const [myRequest, setMyRequest] = useState<MatchRequestResponse | null>(null);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+
+  const handleShowTeamDetails = async (teamId: number) => {
+    try {
+      const team = await getTeamById(teamId);
+      setSelectedTeam(team);
+      setIsTeamModalOpen(true);
+    } catch (error) {
+      console.error("Lỗi khi tải thông tin chi tiết đội bóng:", error);
+      alert("Không thể tải thông tin đội bóng lúc này. Vui lòng thử lại!");
+    }
+  };
 
   const getSkillLevelLabel = (level: string) => {
     switch (level) {
       case "WEAK":
-        return "Phong trào";
+        return "Yếu";
+      case "BELOW_AVERAGE":
+        return "Trung bình yếu";
       case "AVERAGE":
         return "Trung bình";
+      case "ABOVE_AVERAGE":
+        return "Trung bình khá";
       case "GOOD":
-        return "Khá / Mạnh";
+        return "Cao";
+      case "SEMI_PRO":
+        return "Bán chuyên";
       default:
         return level;
     }
@@ -38,9 +60,15 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
     switch (level) {
       case "WEAK":
         return "bg-teal-100 text-teal-800 border-teal-200";
+      case "BELOW_AVERAGE":
+        return "bg-sky-100 text-sky-800 border-sky-200";
       case "AVERAGE":
         return "bg-amber-100 text-amber-800 border-amber-200";
+      case "ABOVE_AVERAGE":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
       case "GOOD":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "SEMI_PRO":
         return "bg-rose-100 text-rose-800 border-rose-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
@@ -102,9 +130,21 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
 
     setApprovingId(requestId);
     try {
-      await approveMatchRequest(requestId);
-      alert("Đã chấp nhận kèo thành công! Sân đã được đặt tự động.");
-      await fetchMatches();
+      const response = await approveMatchRequest(requestId);
+      alert("Đã chấp nhận kèo thành công! Sân đã được đặt tự động. Vui lòng thanh toán cọc để hoàn tất.");
+      
+      if (response.bookingId && response.price) {
+        navigate("/checkout", {
+          state: {
+            bookingData: {
+              bookingId: response.bookingId,
+              totalPrice: response.price,
+            }
+          }
+        });
+      } else {
+        await fetchMatches();
+      }
     } catch (error) {
       console.error(error);
       const axiosError = error as { response?: { data?: { message?: string } } };
@@ -177,7 +217,11 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
         <div className="flex items-center justify-between rounded-xl bg-[#005E2E]/10 p-3">
           <div className="flex flex-col items-center flex-1 text-center min-w-0">
             <span className="text-xs text-gray-500 font-semibold mb-1">Đội nhà</span>
-            <span className="text-sm font-extrabold text-[#0B582A] truncate w-full" title={match.hostTeamName}>
+            <span
+              onClick={() => handleShowTeamDetails(match.hostTeamId)}
+              className="text-sm font-extrabold text-[#0B582A] truncate w-full cursor-pointer hover:underline hover:text-emerald-600"
+              title={match.hostTeamName}
+            >
               {match.hostTeamName}
             </span>
           </div>
@@ -191,10 +235,13 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
           <div className="flex flex-col items-center flex-1 text-center min-w-0">
             <span className="text-xs text-gray-500 font-semibold mb-1">Đối thủ</span>
             <span
+              onClick={() => isMatched && match.guestTeamId && handleShowTeamDetails(match.guestTeamId)}
               className={`text-sm font-extrabold truncate w-full ${
-                isMatched ? "text-[#0B582A]" : "text-amber-600 italic"
+                isMatched
+                  ? "text-[#0B582A] cursor-pointer hover:underline hover:text-emerald-600"
+                  : "text-amber-600 italic"
               }`}
-              title={match.guestTeamName || "Đang chờ..."}
+              title={isMatched ? (match.guestTeamName || undefined) : "Đang chờ..."}
             >
               {isMatched ? match.guestTeamName : "Chờ đối thủ"}
             </span>
@@ -287,6 +334,12 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
           </button>
         )}
       </div>
+
+      <TeamDetailModal
+        team={selectedTeam}
+        isOpen={isTeamModalOpen}
+        onClose={() => setIsTeamModalOpen(false)}
+      />
     </div>
   );
 }

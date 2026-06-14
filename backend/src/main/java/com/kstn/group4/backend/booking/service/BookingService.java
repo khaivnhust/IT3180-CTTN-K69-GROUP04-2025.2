@@ -187,6 +187,70 @@ public class BookingService {
         bookingRepository.save(booking);
     }
 
+    /**
+     * Chốt hóa đơn: thêm dịch vụ phát sinh, cập nhật tổng tiền, chuyển trạng thái COMPLETED.
+     */
+    @Transactional
+    public AdminBookingDetailResponse settleBooking(Integer bookingId, com.kstn.group4.backend.booking.dto.admin.SettleBookingRequest request) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt sân với ID: " + bookingId, "Booking"));
+
+        if (booking.getStatus() != BookingStatus.BOOKED && booking.getStatus() != BookingStatus.PLAYING) {
+            throw new BusinessException(
+                    "Chỉ có thể chốt hóa đơn cho đơn ở trạng thái 'Đã đặt' hoặc 'Đang đá'",
+                    "INVALID_SETTLE_STATUS"
+            );
+        }
+
+        // Thêm dịch vụ phát sinh mới
+        BigDecimal newServicesTotal = BigDecimal.ZERO;
+        if (request.services() != null && !request.services().isEmpty()) {
+            for (var svcReq : request.services()) {
+                if (svcReq.quantity() == null || svcReq.quantity() <= 0) continue;
+
+                AddonService service = addonServiceRepository.findById(svcReq.serviceId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dịch vụ", "Service"));
+
+                BookingServiceItem item = new BookingServiceItem();
+                item.setBooking(booking);
+                item.setService(service);
+                item.setQuantity(svcReq.quantity());
+                item.setPriceAtBooking(service.getPrice());
+                bookingServiceItemRepository.save(item);
+
+                newServicesTotal = newServicesTotal.add(
+                        service.getPrice().multiply(BigDecimal.valueOf(svcReq.quantity()))
+                );
+            }
+        }
+
+        // Cập nhật tổng tiền = tiền sân gốc + dịch vụ cũ + dịch vụ mới phát sinh
+        BigDecimal currentTotal = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
+        BigDecimal updatedTotal = currentTotal.add(newServicesTotal);
+        booking.setTotalPrice(updatedTotal);
+
+        // Chuyển trạng thái sang COMPLETED
+        BookingStatus oldStatus = booking.getStatus();
+        booking.setStatus(BookingStatus.COMPLETED);
+        bookingRepository.save(booking);
+
+        // Ghi activity log
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Integer adminId = null;
+        String adminName = "System";
+        if (auth != null && auth.getPrincipal() instanceof com.kstn.group4.backend.config.security.services.UserPrincipal principal) {
+            adminId = principal.getId();
+            adminName = principal.getAppUsername();
+        }
+        activityLogService.log(adminId, adminName, "SETTLE_BOOKING", "BOOKING",
+                bookingId.toString(), "Chốt hóa đơn đơn đặt sân #" + bookingId + " — " + request.paymentMethod(), null, null);
+
+        publishBookingStatusChanged(booking, oldStatus, BookingStatus.COMPLETED);
+
+        return toAdminDetailResponse(booking);
+    }
+
     // ==================== MAPPER METHODS (Private) ====================
 
     /**
@@ -218,7 +282,15 @@ public class BookingService {
                 : "N/A";
 
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal depositAmount = totalPrice.divide(new BigDecimal("2"), RoundingMode.HALF_UP);
+        BigDecimal depositAmount = calculateDepositAmount(totalPrice);
+
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            status = "PENDING_PAYMENT";
+            depositAmount = BigDecimal.ZERO;
+        } else if (booking.getStatus() == BookingStatus.CANCELLED && booking.getPointsRedeemedAt() == null) {
+            depositAmount = BigDecimal.ZERO;
+        }
 
         return AdminBookingSummaryResponse.builder()
                 .id(booking.getId())
@@ -258,6 +330,11 @@ public class BookingService {
                 ? booking.getPitch().getVenue().getName()
                 : "N/A";
 
+        Integer venueId = booking.getPitch() != null
+                && booking.getPitch().getVenue() != null
+                ? booking.getPitch().getVenue().getId()
+                : null;
+
         String pitchName = booking.getPitch() != null && booking.getPitch().getName() != null
                 ? booking.getPitch().getName()
                 : "N/A";
@@ -271,9 +348,21 @@ public class BookingService {
                 : BigDecimal.ZERO;
 
         BigDecimal depositAmount = BigDecimal.ZERO;
+        String paymentStatus = "UNPAID";
+
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            status = "PENDING_PAYMENT";
+        } else if (booking.getPointsRedeemedAt() != null || 
+                   booking.getStatus() == BookingStatus.BOOKED || 
+                   booking.getStatus() == BookingStatus.CONFIRMED ||
+                   booking.getStatus() == BookingStatus.PLAYING || 
+                   booking.getStatus() == BookingStatus.COMPLETED) {
+            depositAmount = calculateDepositAmount(totalPrice);
+            paymentStatus = "PARTIAL";
+        }
 
         String adminNote = null;
-        String paymentStatus = "UNPAID";
 
         List<AdminBookingDetailResponse.AddonServiceItem> addOns = bookingServiceItemRepository.findByBookingId(booking.getId()).stream()
                 .map(item -> new AdminBookingDetailResponse.AddonServiceItem(
@@ -285,6 +374,7 @@ public class BookingService {
 
         return AdminBookingDetailResponse.builder()
                 .id(booking.getId())
+                .venueId(venueId)
                 .venueName(venueName)
                 .pitchName(pitchName)
                 .bookingDate(booking.getBookingDate())
@@ -328,6 +418,11 @@ public class BookingService {
             throw new BusinessException("Ngày đặt sân không được để trống", "INVALID_BOOKING_DATE");
         }
 
+        // Chặn đặt sân ngày quá khứ
+        if (request.getBookingDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Không thể đặt sân cho ngày trong quá khứ", "PAST_BOOKING_DATE");
+        }
+
         // ==================== STEP 1: Lock Pitch with PESSIMISTIC_WRITE ====================
         Pitch pitch = pitchRepository.findByIdForUpdate(request.getPitchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sân với ID: " + request.getPitchId(), "Pitch"));
@@ -344,6 +439,13 @@ public class BookingService {
         if (timeSlot.getStartTime().isBefore(pitch.getVenue().getOpenTime())
                 || timeSlot.getEndTime().isAfter(pitch.getVenue().getCloseTime())) {
             throw new BusinessException("Nằm ngoài giờ mở cửa của sân", "OUT_OF_OPERATING_HOURS");
+        }
+
+        // Chặn ca đã qua giờ đá trong ngày hôm nay
+        if (request.getBookingDate().equals(LocalDate.now())) {
+            if (timeSlot.getStartTime().isBefore(LocalTime.now())) {
+                throw new BusinessException("Ca đá này hôm nay đã trôi qua, vui lòng chọn ca khác", "PAST_TIME_SLOT");
+            }
         }
 
         // ==================== STEP 4: Check Slot Not Already Booked ====================
@@ -549,6 +651,23 @@ public class BookingService {
         publishBookingStatusChanged(booking, oldStatus, BookingStatus.CANCELLED);
     }
 
+    @Transactional
+    public void cancelUnpaidBooking(Integer bookingId, Integer playerId) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt sân với ID: " + bookingId, "Booking"));
+
+        if (booking.getPlayer() == null || !booking.getPlayer().getId().equals(playerId)) {
+            throw new ForbiddenException("Bạn không có quyền hủy đơn đặt sân này");
+        }
+
+        if (booking.getStatus() == BookingStatus.RESERVED && booking.getPointsRedeemedAt() == null) {
+            BookingStatus oldStatus = booking.getStatus();
+            booking.setStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+            publishBookingStatusChanged(booking, oldStatus, BookingStatus.CANCELLED);
+        }
+    }
+
     /**
      * Get all bookings for a specific player.
      * Uses READ-ONLY transaction since no modifications are made.
@@ -578,6 +697,12 @@ public class BookingService {
     private PlayerBookingResponse toPlayerBookingResponse(Booking booking) {
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
         BigDecimal depositAmount = calculateDepositAmount(totalPrice);
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            depositAmount = BigDecimal.ZERO;
+        } else if (booking.getStatus() == BookingStatus.CANCELLED && booking.getPointsRedeemedAt() == null) {
+            depositAmount = BigDecimal.ZERO;
+        }
         return toPlayerBookingResponse(booking, depositAmount);
     }
 
@@ -587,6 +712,10 @@ public class BookingService {
                 : "N/A";
 
         String status = booking.getStatus() != null ? booking.getStatus().name() : "N/A";
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            status = "PENDING_PAYMENT";
+        }
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
 
         return new PlayerBookingResponse(
@@ -842,7 +971,7 @@ public class BookingService {
         return totalPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
     }
 
-    private void publishBookingStatusChanged(Booking booking, BookingStatus oldStatus, BookingStatus newStatus) {
+    public void publishBookingStatusChanged(Booking booking, BookingStatus oldStatus, BookingStatus newStatus) {
         if (booking.getPlayer() == null || oldStatus == newStatus) {
             return;
         }
@@ -895,7 +1024,7 @@ public class BookingService {
         booking.setBookingDate(bookingDate);
         booking.setStartTime(timeSlot.getStartTime());
         booking.setEndTime(timeSlot.getEndTime());
-        booking.setStatus(BookingStatus.CONFIRMED); // Ép trạng thái CONFIRMED (luồng mock)
+        booking.setStatus(BookingStatus.RESERVED);
         booking.setBookingType("MATCH_AUTO");
         booking.setTotalPrice(totalPrice); // Lưu đúng tổng tiền tính được từ CSDL!
 

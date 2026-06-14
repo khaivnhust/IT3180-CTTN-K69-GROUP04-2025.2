@@ -124,11 +124,11 @@ VALUES
 -- ==========================================
 -- 7. TEAMS & TEAM MEMBERS
 -- ==========================================
-INSERT INTO `teams` (`id`, `name`, `captain_id`, `description`, `reputation_score`, `status`, `banned_until`, `created_at`)
+INSERT INTO `teams` (`id`, `name`, `captain_id`, `description`, `reputation_score`, `status`, `banned_until`, `created_at`, `skill_level`)
 VALUES
-    (1, 'FC Mixi', 2, 'Đội bóng phong trào khu vực Cầu Giấy', 100, 'APPROVED', NULL, NOW()),
-    (2, 'FC Refund', 3, 'Giao lưu vui vẻ, không quạu', 95, 'PENDING', NULL, NOW()),
-    (3, 'FC Banned', 2, 'Đội bóng bị cấm thi đấu tạm thời', 80, 'BANNED', DATE_ADD(NOW(), INTERVAL 7 DAY), NOW());
+    (1, 'FC Mixi', 2, 'Đội bóng phong trào khu vực Cầu Giấy', 100, 'APPROVED', NULL, NOW(), 'AVERAGE'),
+    (2, 'FC Refund', 3, 'Giao lưu vui vẻ, không quạu', 95, 'PENDING', NULL, NOW(), 'BELOW_AVERAGE'),
+    (3, 'FC Banned', 2, 'Đội bóng bị cấm thi đấu tạm thời', 80, 'BANNED', DATE_ADD(NOW(), INTERVAL 7 DAY), NOW(), 'WEAK');
 
 INSERT INTO `team_members` (`team_id`, `user_email`, `status`)
 VALUES

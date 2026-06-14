@@ -349,7 +349,7 @@ export function useBookingFieldFlow(venueId: number) {
           return;
         }
 
-        const firstBooking = createdBookings[0];
+        const bookingIdsConcat = createdBookings.map(b => b.id).join("-");
         const pitchNameDisplay = selectedSlots.length > 1
           ? `${selectedSlots[0].pitchName} và ${selectedSlots.length - 1} sân khác`
           : selectedSlots[0].pitchName;
@@ -370,7 +370,7 @@ export function useBookingFieldFlow(venueId: number) {
         navigate("/checkout", {
           state: {
             bookingData: {
-              bookingId: firstBooking.id,
+              bookingId: bookingIdsConcat,
               pitchName: pitchNameDisplay,
               bookingDate: pendingBooking.bookingDate,
               startTime: selectedSlots[0].startTime,
@@ -397,7 +397,7 @@ export function useBookingFieldFlow(venueId: number) {
         )
       );
 
-      const firstBooking = bookingResponses[0];
+      const bookingIdsConcat = bookingResponses.map(b => b.id).join("-");
 
       const pitchNameDisplay = selectedSlots.length > 1
         ? `${selectedSlots[0].pitchName} và ${selectedSlots.length - 1} sân khác`
@@ -416,7 +416,7 @@ export function useBookingFieldFlow(venueId: number) {
       navigate("/checkout", {
         state: {
           bookingData: {
-            bookingId: firstBooking.id,
+            bookingId: bookingIdsConcat,
             pitchName: pitchNameDisplay,
             bookingDate: bDate,
             startTime: sTime,
