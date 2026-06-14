@@ -56,7 +56,8 @@ export const CheckoutPage = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      await cancelUnpaidBooking(bookingData.bookingId);
+      const ids = String(bookingData.bookingId).split("-");
+      await Promise.all(ids.map(id => cancelUnpaidBooking(parseInt(id, 10))));
     } catch (error) {
       console.error("Lỗi khi hủy đơn đặt sân", error);
     } finally {

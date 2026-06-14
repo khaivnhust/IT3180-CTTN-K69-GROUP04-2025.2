@@ -21,10 +21,11 @@ export const PaymentResultPage = () => {
   
   const isSuccess = responseCode === "00";
   const amount = amountStr ? (parseInt(amountStr, 10) / 100).toLocaleString('vi-VN') : "0";
+  const displayTxnRef = txnRef ? txnRef.split("_")[0] : "";
 
   useEffect(() => {
-    if (!isSuccess && txnRef) {
-      void cancelUnpaidBooking(parseInt(txnRef, 10)).catch((error) => {
+    if (!isSuccess && displayTxnRef) {
+      void cancelUnpaidBooking(parseInt(displayTxnRef, 10)).catch((error) => {
         console.error("Không thể tự động hủy đơn đặt sân", error);
       });
       return;
@@ -38,7 +39,7 @@ export const PaymentResultPage = () => {
       console.error("Không thể xác nhận thanh toán VNPay", error);
       setConfirmError("Thanh toán thành công nhưng chưa thể cập nhật điểm thành viên. Vui lòng liên hệ quản trị viên.");
     });
-  }, [isSuccess, returnParams, txnRef]);
+  }, [isSuccess, returnParams, txnRef, displayTxnRef]);
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-4">
@@ -67,7 +68,7 @@ export const PaymentResultPage = () => {
           <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left space-y-2 text-sm border border-gray-100">
             <div className="flex justify-between">
               <span className="text-gray-500">Mã đơn hàng:</span>
-              <span className="font-medium">{txnRef}</span>
+              <span className="font-medium">{displayTxnRef}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Số tiền:</span>
