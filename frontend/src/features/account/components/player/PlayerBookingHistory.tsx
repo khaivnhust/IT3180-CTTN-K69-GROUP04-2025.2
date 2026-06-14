@@ -12,6 +12,8 @@ interface PlayerBookingHistoryProps {
   onSubmitReview?: (bookingId: number, rating: number, content: string) => Promise<void> | void;
   reviewingBookingId?: number | null;
   isTab?: boolean;
+  onCancelBooking?: (bookingId: number) => Promise<void> | void;
+  cancellingBookingId?: number | null;
 }
 
 export function PlayerBookingHistory({
@@ -23,6 +25,8 @@ export function PlayerBookingHistory({
   onSubmitReview,
   reviewingBookingId = null,
   isTab = false,
+  onCancelBooking,
+  cancellingBookingId = null,
 }: PlayerBookingHistoryProps) {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [reviewTarget, setReviewTarget] = useState<PlayerBookingHistoryItem | null>(null);
@@ -148,6 +152,19 @@ export function PlayerBookingHistory({
                       {item.status === "PLAYING" && "Đang đá"}
                       {item.status === "CANCELLED" && "Đã hủy"}
                     </span>
+                    {(item.status === "PENDING_PAYMENT" || item.status === "RESERVED") && onCancelBooking && (
+                      <button
+                        type="button"
+                        onClick={() => onCancelBooking(item.id)}
+                        disabled={cancellingBookingId === item.id}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {cancellingBookingId === item.id && (
+                          <Loader2 size={14} className="animate-spin mr-1" />
+                        )}
+                        Hủy đặt sân
+                      </button>
+                    )}
                     {item.status === "COMPLETED" && onSubmitReview && (
                       item.reviewed ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">

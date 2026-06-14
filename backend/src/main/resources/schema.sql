@@ -196,9 +196,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     CONSTRAINT `fk_bookings_pitch_id`
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`),
     CONSTRAINT `fk_bookings_time_slot_id`
-        FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`),
-    CONSTRAINT `uk_bookings_date_pitch_slot`
-        UNIQUE (`booking_date`, `pitch_id`, `time_slot_id`)
+        FOREIGN KEY (`time_slot_id`) REFERENCES `time_slots` (`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `pitch_reviews` (

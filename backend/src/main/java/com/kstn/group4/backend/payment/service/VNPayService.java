@@ -69,9 +69,10 @@ public class VNPayService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "User"));
 
         int pointsToUse = request.pointsToUse() != null ? request.pointsToUse() : 0;
-        BigDecimal originalAmount = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal discountAmount = calculateDiscountAmount(pointsToUse, originalAmount, payer);
-        BigDecimal payableAmount = originalAmount.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
+        BigDecimal depositAmount = totalPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal discountAmount = calculateDiscountAmount(pointsToUse, depositAmount, payer);
+        BigDecimal payableAmount = depositAmount.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
 
         if (payableAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("Số điểm sử dụng phải nhỏ hơn tổng tiền thanh toán", "INVALID_POINTS_REDEMPTION");
@@ -86,9 +87,9 @@ public class VNPayService {
         long vnpAmount = payableAmount.longValue() * 100L;
 
         String vnpCreateDate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-        // Expire after 15 minutes
+        // Expire after 10 minutes
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-        cal.add(Calendar.MINUTE, 15);
+        cal.add(Calendar.MINUTE, 10);
         String vnpExpireDate = new SimpleDateFormat("yyyyMMddHHmmss").format(cal.getTime());
 
         String ipAddr = getClientIp(httpRequest);
@@ -231,7 +232,8 @@ public class VNPayService {
         }
 
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal payableAmount = totalPrice.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal depositAmount = totalPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal payableAmount = depositAmount.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
         String expectedVnpAmount = String.valueOf(payableAmount.longValue() * 100L);
         return expectedVnpAmount.equals(rawVnpAmount);
     }

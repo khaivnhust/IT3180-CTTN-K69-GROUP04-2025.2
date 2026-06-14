@@ -28,7 +28,7 @@ public class BookingScheduledTasks {
     @Scheduled(fixedDelay = 60000)
     @Transactional
     public void cleanExpiredBookings() {
-        LocalDateTime expirationThreshold = LocalDateTime.now().minusMinutes(15);
+        LocalDateTime expirationThreshold = LocalDateTime.now().minusMinutes(10);
         
         List<Booking> expiredBookings = bookingRepository.findExpiredReservedBookings(expirationThreshold);
         

@@ -22,8 +22,10 @@ import com.kstn.group4.backend.venue.repository.PitchReviewRepository;
 import com.kstn.group4.backend.venue.repository.TimeSlotRepository;
 import com.kstn.group4.backend.venue.repository.VenueRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +138,7 @@ public class VenuePlayerService {
                         return null;
                     }
 
-                    BigDecimal price = findPrice(priceRules, timeSlot.getSlotNumber(), isWeekend, pitch.getBasePrice());
+                    BigDecimal price = findPrice(priceRules, timeSlot, isWeekend, pitch.getBasePrice());
 
                     return new SlotDetailResponse(
                             timeSlot.getId(),
@@ -187,7 +189,7 @@ public class VenuePlayerService {
                 .map(timeSlot -> {
                     Booking booking = slotBookingMap.get(timeSlot.getId());
                     String status = resolveSlotStatus(booking);
-                    BigDecimal price = findPrice(priceRules, timeSlot.getSlotNumber(), weekend, pitch.getBasePrice());
+                    BigDecimal price = findPrice(priceRules, timeSlot, weekend, pitch.getBasePrice());
 
                     return new SlotStatus(
                             timeSlot.getId(),
@@ -258,16 +260,24 @@ public class VenuePlayerService {
 
     private BigDecimal findPrice(
             List<PriceRule> priceRules,
-            Integer slotNumber,
+            TimeSlot timeSlot,
             boolean weekend,
             BigDecimal basePrice
     ) {
+        LocalTime startTime = timeSlot.getStartTime();
+        boolean isGoldenHour = !startTime.isBefore(LocalTime.of(17, 0)) && startTime.isBefore(LocalTime.of(22, 0));
+
         BigDecimal coefficient = priceRules.stream()
-                .filter(rule -> slotNumber.equals(rule.getSlotNumber()) && weekend == Boolean.TRUE.equals(rule.getIsWeekend()))
+                .filter(rule -> timeSlot.getSlotNumber().equals(rule.getSlotNumber()) && weekend == Boolean.TRUE.equals(rule.getIsWeekend()))
                 .map(PriceRule::getCoefficient)
                 .findFirst()
-                .orElse(BigDecimal.ONE);
-        return basePrice != null ? basePrice.multiply(coefficient) : BigDecimal.ZERO;
+                .orElseGet(() -> {
+                    BigDecimal coeff = BigDecimal.ONE;
+                    if (weekend) coeff = coeff.add(new BigDecimal("0.2"));
+                    if (isGoldenHour) coeff = coeff.add(new BigDecimal("0.3"));
+                    return coeff;
+                });
+        return basePrice != null ? basePrice.multiply(coefficient).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
 

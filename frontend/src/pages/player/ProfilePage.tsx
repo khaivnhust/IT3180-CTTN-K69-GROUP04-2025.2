@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getPlayerBookings, updatePlayerProfile } from "../../features/account/api/account.api";
 import { createPitchReview } from "@/features/venue/api/venueApi";
+import { cancelUnpaidBooking } from "@/features/booking/api/bookingApi";
 import { getApiErrorMessage, logApiError } from "@/shared/utils/apiError";
 import { toast } from "../../shared/utils/toast";
 import { Loader2 } from "lucide-react";
@@ -110,6 +111,19 @@ export function ProfilePage() {
     },
   });
 
+  const cancelBookingMutation = useMutation({
+    mutationFn: cancelUnpaidBooking,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["playerBookings"] });
+      void queryClient.invalidateQueries({ queryKey: ["playerProfile"] });
+      toast.success("Hủy đặt sân thành công, ca sân đã được giải phóng!");
+    },
+    onError: (err) => {
+      logApiError("ProfilePage.cancelBooking", err);
+      toast.error(getApiErrorMessage(err, "Không thể hủy đặt sân."));
+    },
+  });
+
   const toggleEditing = async () => {
     if (isEditing) {
       updateProfileMutation.mutate();
@@ -180,6 +194,12 @@ export function ProfilePage() {
                   }}
                   reviewingBookingId={
                     reviewMutation.isPending ? reviewMutation.variables?.bookingId ?? null : null
+                  }
+                  onCancelBooking={async (bookingId) => {
+                    await cancelBookingMutation.mutateAsync(bookingId);
+                  }}
+                  cancellingBookingId={
+                    cancelBookingMutation.isPending ? cancelBookingMutation.variables ?? null : null
                   }
                   isTab={true}
                 />
