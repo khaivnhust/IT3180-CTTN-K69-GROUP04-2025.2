@@ -35,6 +35,8 @@ public interface PitchRepository extends JpaRepository<Pitch, Integer> {
             @Param("bookingDate") LocalDate bookingDate,
             @Param("timeSlotId") Integer timeSlotId);
 
+    boolean existsByVenueIdAndPitchTypeAndIsActiveTrue(Integer venueId, PitchType pitchType);
+
     List<Pitch> findByVenueId(Integer venueId);
 
     @Query(

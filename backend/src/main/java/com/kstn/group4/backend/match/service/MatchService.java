@@ -142,6 +142,27 @@ public class MatchService {
         Venue venue = venueRepository.findById(request.getVenueId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khu sân với ID: " + request.getVenueId(), "Venue"));
 
+        PitchType pitchTypeEnum = switch (request.getPitchType()) {
+            case 5 -> PitchType.SAN_5;
+            case 7 -> PitchType.SAN_7;
+            case 11 -> PitchType.SAN_11;
+            default -> throw new BusinessException("Loại sân không hợp lệ");
+        };
+
+        if (!pitchRepository.existsByVenueIdAndPitchTypeAndIsActiveTrue(request.getVenueId(), pitchTypeEnum)) {
+            throw new BusinessException("Cụm sân này không có loại sân bạn yêu cầu hoặc sân đang bảo trì");
+        }
+
+        List<Pitch> availablePitches = pitchRepository.findAvailablePitches(
+                request.getVenueId(),
+                pitchTypeEnum,
+                request.getMatchDate(),
+                request.getTimeSlotId()
+        );
+        if (availablePitches.isEmpty()) {
+            throw new BusinessException("Loại sân này đã được đặt hết trong khung giờ đã chọn");
+        }
+
         Match match = new Match();
         match.setVenue(venue);
         match.setHostTeam(hostTeam);
