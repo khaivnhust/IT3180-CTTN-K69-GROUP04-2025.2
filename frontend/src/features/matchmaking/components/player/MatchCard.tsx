@@ -40,11 +40,17 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
   const getSkillLevelLabel = (level: string) => {
     switch (level) {
       case "WEAK":
-        return "Phong trào";
+        return "Yếu";
+      case "BELOW_AVERAGE":
+        return "Trung bình yếu";
       case "AVERAGE":
         return "Trung bình";
+      case "ABOVE_AVERAGE":
+        return "Trung bình khá";
       case "GOOD":
-        return "Khá / Mạnh";
+        return "Cao";
+      case "SEMI_PRO":
+        return "Bán chuyên";
       default:
         return level;
     }
@@ -54,9 +60,15 @@ export function MatchCard({ match, userTeamId }: MatchCardProps) {
     switch (level) {
       case "WEAK":
         return "bg-teal-100 text-teal-800 border-teal-200";
+      case "BELOW_AVERAGE":
+        return "bg-sky-100 text-sky-800 border-sky-200";
       case "AVERAGE":
         return "bg-amber-100 text-amber-800 border-amber-200";
+      case "ABOVE_AVERAGE":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
       case "GOOD":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "SEMI_PRO":
         return "bg-rose-100 text-rose-800 border-rose-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";

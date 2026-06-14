@@ -2,6 +2,7 @@ import { isAxiosError } from "axios";
 import apiClient from "@/shared/api/apiClient";
 import { logApiError } from "@/shared/utils/apiError";
 import type { Team, TeamStatus } from "../types/team.types";
+import type { MatchSkillLevel } from "../../matchmaking/types/matchmaking.types";
 
 export const getPendingTeams = async (): Promise<Team[]> => {
   try {
@@ -41,6 +42,7 @@ export const updateTeamStatus = async (
 export const createTeam = async (data: {
   name: string;
   description: string;
+  skillLevel: MatchSkillLevel;
   memberEmails: string[];
 }): Promise<Team> => {
   try {
@@ -48,6 +50,23 @@ export const createTeam = async (data: {
     return response.data;
   } catch (error) {
     logApiError("createTeam", error);
+    throw error;
+  }
+};
+
+export const updateTeam = async (
+  teamId: number,
+  data: {
+    name: string;
+    description: string;
+    skillLevel: MatchSkillLevel;
+  },
+): Promise<Team> => {
+  try {
+    const response = await apiClient.put<Team>(`/teams/${teamId}`, data);
+    return response.data;
+  } catch (error) {
+    logApiError("updateTeam", error, { teamId });
     throw error;
   }
 };

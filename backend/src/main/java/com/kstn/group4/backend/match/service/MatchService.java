@@ -221,12 +221,15 @@ public class MatchService {
 
             for (Match m : history) {
                 // Skill Level
-                double skillVal = 2.0;
+                double skillVal = 3.0;
                 if (m.getSkillLevel() != null) {
                     skillVal = switch (m.getSkillLevel()) {
                         case WEAK -> 1.0;
-                        case AVERAGE -> 2.0;
-                        case GOOD -> 3.0;
+                        case BELOW_AVERAGE -> 2.0;
+                        case AVERAGE -> 3.0;
+                        case ABOVE_AVERAGE -> 4.0;
+                        case GOOD -> 5.0;
+                        case SEMI_PRO -> 6.0;
                     };
                 }
                 skillSum += skillVal;
@@ -268,7 +271,17 @@ public class MatchService {
             }
         }
 
-        final Double finalAvgSkillLevel = (avgSkillLevel != null) ? avgSkillLevel : getDefaultSkillLevel(teamName, teamDesc);
+        final Double finalAvgSkillLevel = (avgSkillLevel != null) ? avgSkillLevel : 
+            (userTeam != null && userTeam.getSkillLevel() != null ? 
+                switch (userTeam.getSkillLevel()) {
+                    case WEAK -> 1.0;
+                    case BELOW_AVERAGE -> 2.0;
+                    case AVERAGE -> 3.0;
+                    case ABOVE_AVERAGE -> 4.0;
+                    case GOOD -> 5.0;
+                    case SEMI_PRO -> 6.0;
+                } : getDefaultSkillLevel(teamName, teamDesc)
+            );
         final Double finalAvgSlotNumber = (avgSlotNumber != null) ? avgSlotNumber : getDefaultSlotNumber(teamName, teamDesc);
         final Long finalMaxVenueCount = maxVenueCount;
         final Venue finalFavoriteVenue = favoriteVenue;
@@ -336,10 +349,13 @@ public class MatchService {
         if (m.getSkillLevel() != null) {
             double candSkillVal = switch (m.getSkillLevel()) {
                 case WEAK -> 1.0;
-                case AVERAGE -> 2.0;
-                case GOOD -> 3.0;
+                case BELOW_AVERAGE -> 2.0;
+                case AVERAGE -> 3.0;
+                case ABOVE_AVERAGE -> 4.0;
+                case GOOD -> 5.0;
+                case SEMI_PRO -> 6.0;
             };
-            skillScore = 1.0 - (Math.abs(candSkillVal - avgSkillLevel) / 2.0);
+            skillScore = 1.0 - (Math.abs(candSkillVal - avgSkillLevel) / 5.0);
         }
 
         // 3. Time Slot Similarity
@@ -386,9 +402,9 @@ public class MatchService {
             return 1.0;
         }
         if (combined.contains("mạnh") || combined.contains("cứng") || combined.contains("pro") || combined.contains("khá") || combined.contains("giỏi") || combined.contains("good")) {
-            return 3.0;
+            return 5.0;
         }
-        return 2.0;
+        return 3.0;
     }
 
     private double getDefaultSlotNumber(String teamName, String teamDesc) {

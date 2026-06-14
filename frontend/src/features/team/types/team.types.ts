@@ -1,3 +1,5 @@
+import type { MatchSkillLevel } from "../../matchmaking/types/matchmaking.types";
+
 export type TeamStatus = "PENDING" | "APPROVED" | "REJECTED" | "BANNED";
 export type TeamMemberStatus = "INVITED" | "ACTIVE" | "REQUESTED";
 
@@ -14,6 +16,7 @@ export interface Team {
   description: string;
   reputationScore: number;
   status: TeamStatus;
+  skillLevel?: MatchSkillLevel;
   bannedUntil?: string;
   createdAt: string;
   memberEmails: string[];

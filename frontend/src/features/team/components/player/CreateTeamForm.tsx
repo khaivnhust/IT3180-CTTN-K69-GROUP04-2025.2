@@ -1,6 +1,7 @@
 import { Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { createTeam } from "../../api/teamApi";
+import type { MatchSkillLevel } from "../../../matchmaking/types/matchmaking.types";
 
 interface CreateTeamFormProps {
   onClose?: () => void;
@@ -11,6 +12,7 @@ interface CreateTeamFormProps {
 export function CreateTeamForm({ onClose, onSuccess, isInline = false }: CreateTeamFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [skillLevel, setSkillLevel] = useState<MatchSkillLevel>("AVERAGE");
   const [emails, setEmails] = useState<string[]>([""]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export function CreateTeamForm({ onClose, onSuccess, isInline = false }: CreateT
       await createTeam({
         name: name.trim(),
         description: description.trim(),
+        skillLevel,
         memberEmails: activeEmails,
       });
       alert("Đăng ký thành lập đội bóng thành công! Vui lòng chờ Admin phê duyệt.");
@@ -86,6 +89,24 @@ export function CreateTeamForm({ onClose, onSuccess, isInline = false }: CreateT
           placeholder="Nhập tên đội bóng..."
           className="w-full rounded-xl border-2 border-black/40 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-[#005E2E] focus:outline-none"
         />
+      </div>
+
+      <div>
+        <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+          Trình độ đội bóng
+        </label>
+        <select
+          value={skillLevel}
+          onChange={(e) => setSkillLevel(e.target.value as MatchSkillLevel)}
+          className="w-full rounded-xl border-2 border-black/40 bg-white px-3 py-2 text-sm text-gray-800 focus:border-[#005E2E] focus:outline-none cursor-pointer"
+        >
+          <option value="WEAK">Yếu</option>
+          <option value="BELOW_AVERAGE">Trung bình yếu</option>
+          <option value="AVERAGE">Trung bình</option>
+          <option value="ABOVE_AVERAGE">Trung bình khá</option>
+          <option value="GOOD">Cao</option>
+          <option value="SEMI_PRO">Bán chuyên</option>
+        </select>
       </div>
 
       <div>

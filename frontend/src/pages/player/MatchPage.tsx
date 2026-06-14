@@ -171,9 +171,12 @@ export function MatchPage() {
               className="w-full md:w-[180px] rounded-full border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur outline-none focus:outline-none cursor-pointer transition hover:bg-white/20 [&>option]:bg-[#005E2E] [&>option]:text-white"
             >
               <option value="">Tất cả trình độ</option>
-              <option value="WEAK">Phong trào (Yếu)</option>
+              <option value="WEAK">Yếu</option>
+              <option value="BELOW_AVERAGE">Trung bình yếu</option>
               <option value="AVERAGE">Trung bình</option>
-              <option value="GOOD">Khá / Mạnh</option>
+              <option value="ABOVE_AVERAGE">Trung bình khá</option>
+              <option value="GOOD">Cao</option>
+              <option value="SEMI_PRO">Bán chuyên</option>
             </select>
           </div>
         </div>
@@ -203,7 +206,7 @@ export function MatchPage() {
           }`}
         >
           <Trophy size={14} className="text-amber-400 animate-pulse" />
-          Kèo gợi ý (Đối thủ phù hợp)
+          Gợi ý đối thủ
           {activeTab === "recommended" && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400 rounded-full" />
           )}

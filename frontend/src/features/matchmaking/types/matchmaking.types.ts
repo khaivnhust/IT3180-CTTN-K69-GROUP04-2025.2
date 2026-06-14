@@ -1,4 +1,4 @@
-export type MatchSkillLevel = "WEAK" | "AVERAGE" | "GOOD";
+export type MatchSkillLevel = "WEAK" | "BELOW_AVERAGE" | "AVERAGE" | "ABOVE_AVERAGE" | "GOOD" | "SEMI_PRO";
 export type MatchStatus = "OPEN" | "MATCHED" | "SCHEDULED" | "CANCELLED" | "COMPLETED";
 export type MatchRequestStatus = "PENDING_GUEST_CAPTAIN" | "PENDING_HOST_CAPTAIN" | "APPROVED" | "REJECTED";
 

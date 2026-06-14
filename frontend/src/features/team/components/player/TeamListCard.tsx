@@ -1,5 +1,5 @@
 import type { Team } from "../../types/team.types";
-import { User, Award, Users } from "lucide-react";
+import { User, Award, Users, Trophy } from "lucide-react";
 import { useAuthContext } from "@/features/auth/hooks/useAuthContext";
 import { joinTeam } from "../../api/teamApi";
 import { toast } from "@/shared/utils/toast";
@@ -14,6 +14,25 @@ export function TeamListCard({ team }: TeamListCardProps) {
   const { user, isAuthenticated } = useAuthContext();
   const [isJoining, setIsJoining] = useState(false);
   const [hasSentRequest, setHasSentRequest] = useState(false);
+
+  const getSkillLevelLabel = (level: string) => {
+    switch (level) {
+      case "WEAK":
+        return "Yếu";
+      case "BELOW_AVERAGE":
+        return "Trung bình yếu";
+      case "AVERAGE":
+        return "Trung bình";
+      case "ABOVE_AVERAGE":
+        return "Trung bình khá";
+      case "GOOD":
+        return "Cao";
+      case "SEMI_PRO":
+        return "Bán chuyên";
+      default:
+        return level;
+    }
+  };
 
   const currentUserEmail = user?.email?.toLowerCase() || "";
   const isPendingRequest = hasSentRequest || team.members?.some(
@@ -80,6 +99,10 @@ export function TeamListCard({ team }: TeamListCardProps) {
           <div className="flex items-center gap-2">
             <Users size={14} className="text-[#005E2E] shrink-0" />
             <span>Thành viên: <strong className="text-gray-800">{team.memberEmails.length} người</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Trophy size={14} className="text-[#005E2E] shrink-0" />
+            <span>Trình độ: <strong className="text-gray-800">{getSkillLevelLabel(team.skillLevel || "AVERAGE")}</strong></span>
           </div>
         </div>
       </div>

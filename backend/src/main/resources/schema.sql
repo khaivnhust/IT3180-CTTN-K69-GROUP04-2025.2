@@ -256,6 +256,7 @@ CREATE TABLE IF NOT EXISTS `teams` (
     `status` VARCHAR(50) NOT NULL,
     `banned_until` DATETIME DEFAULT NULL,
     `created_at` DATETIME NOT NULL,
+    `skill_level` VARCHAR(50) DEFAULT 'AVERAGE',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_teams_captain_id`
         FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`)

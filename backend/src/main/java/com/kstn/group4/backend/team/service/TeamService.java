@@ -18,6 +18,8 @@ import com.kstn.group4.backend.notification.event.TeamInvitationCreatedEvent;
 import com.kstn.group4.backend.notification.service.NotificationService;
 import com.kstn.group4.backend.notification.entity.NotificationType;
 import com.kstn.group4.backend.team.dto.CreateTeamRequest;
+import com.kstn.group4.backend.team.dto.UpdateTeamRequest;
+import com.kstn.group4.backend.match.enums.MatchSkillLevel;
 import com.kstn.group4.backend.team.dto.TeamMemberResponse;
 import com.kstn.group4.backend.team.dto.TeamResponse;
 import com.kstn.group4.backend.team.dto.TeamStatusUpdateRequest;
@@ -67,6 +69,7 @@ public class TeamService {
         team.setCaptain(captain);
         team.setDescription(request.getDescription());
         team.setStatus(TeamStatus.PENDING);
+        team.setSkillLevel(request.getSkillLevel() != null ? request.getSkillLevel() : MatchSkillLevel.AVERAGE);
         final Team savedTeam = teamRepository.save(team);
 
         captain.setTeamId(savedTeam.getId());
@@ -101,6 +104,15 @@ public class TeamService {
 
         teamMemberRepository.saveAll(members);
         publishTeamInvitations(savedTeam, captain.getUsername(), invitedRegisteredUsers);
+
+        // Gửi thông báo cho Admin: có đội bóng mới chờ phê duyệt
+        notificationService.createNotificationForAdmins(
+                NotificationType.ADMIN_ALERT,
+                "Yêu cầu phê duyệt đội bóng mới",
+                "Đội bóng '" + savedTeam.getName() + "' vừa được đăng ký bởi " + captain.getUsername() + " và đang chờ duyệt.",
+                "TEAM",
+                savedTeam.getId().toString()
+        );
 
         return buildTeamResponse(savedTeam, members);
     }
@@ -263,6 +275,17 @@ public class TeamService {
             );
         }
 
+        // Gửi cảnh báo Admin nếu điểm uy tín giảm xuống dưới 50
+        if (team.getReputationScore() < 50) {
+            notificationService.createNotificationForAdmins(
+                    NotificationType.ADMIN_ALERT,
+                    "Cảnh báo uy tín đội bóng",
+                    "Đội bóng '" + team.getName() + "' có điểm uy tín giảm xuống còn " + team.getReputationScore() + "/100. Vui lòng kiểm tra.",
+                    "TEAM",
+                    teamId.toString()
+            );
+        }
+
         return mapToResponse(team);
     }
 
@@ -357,6 +380,7 @@ public class TeamService {
                 team.getDescription(),
                 team.getReputationScore(),
                 team.getStatus(),
+                team.getSkillLevel(),
                 team.getBannedUntil(),
                 team.getCreatedAt(),
                 memberEmails,
@@ -629,6 +653,27 @@ public class TeamService {
                 "TEAM",
                 team.getId().toString()
         );
+    }
+
+    @Transactional
+    public TeamResponse updateTeamDetails(UserPrincipal userPrincipal, Long teamId, UpdateTeamRequest request) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đội bóng với ID: " + teamId, "Team"));
+
+        if (!team.getCaptain().getId().equals(userPrincipal.getId())) {
+            throw new BusinessException("Bạn không phải là đội trưởng của đội bóng này!");
+        }
+
+        if (!team.getName().equalsIgnoreCase(request.getName()) && teamRepository.existsByName(request.getName())) {
+            throw new BusinessException("Tên đội bóng đã được sử dụng");
+        }
+
+        team.setName(request.getName());
+        team.setDescription(request.getDescription());
+        team.setSkillLevel(request.getSkillLevel() != null ? request.getSkillLevel() : MatchSkillLevel.AVERAGE);
+
+        Team savedTeam = teamRepository.save(team);
+        return mapToResponse(savedTeam);
     }
 
     private void publishTeamInvitations(Team team, String captainName, List<User> invitedUsers) {

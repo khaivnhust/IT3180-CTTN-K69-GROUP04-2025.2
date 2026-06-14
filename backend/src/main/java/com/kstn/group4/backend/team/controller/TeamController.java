@@ -2,6 +2,7 @@ package com.kstn.group4.backend.team.controller;
 
 import com.kstn.group4.backend.config.security.services.UserPrincipal;
 import com.kstn.group4.backend.team.dto.CreateTeamRequest;
+import com.kstn.group4.backend.team.dto.UpdateTeamRequest;
 import com.kstn.group4.backend.team.dto.TeamResponse;
 import com.kstn.group4.backend.team.service.TeamService;
 import jakarta.validation.Valid;
@@ -29,6 +30,17 @@ public class TeamController {
     ) {
         TeamResponse response = teamService.createTeam(userPrincipal, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{teamId}")
+    @PreAuthorize("hasAnyAuthority('PLAYER', 'ROLE_PLAYER', 'ADMIN', 'ROLE_ADMIN')")
+    public ResponseEntity<TeamResponse> updateTeam(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long teamId,
+            @Valid @RequestBody UpdateTeamRequest request
+    ) {
+        TeamResponse response = teamService.updateTeamDetails(userPrincipal, teamId, request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/my-team")
