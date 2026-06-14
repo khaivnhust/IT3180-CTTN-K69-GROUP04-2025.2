@@ -218,7 +218,15 @@ public class BookingService {
                 : "N/A";
 
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal depositAmount = totalPrice.divide(new BigDecimal("2"), RoundingMode.HALF_UP);
+        BigDecimal depositAmount = calculateDepositAmount(totalPrice);
+
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            status = "PENDING_PAYMENT";
+            depositAmount = BigDecimal.ZERO;
+        } else if (booking.getStatus() == BookingStatus.CANCELLED && booking.getPointsRedeemedAt() == null) {
+            depositAmount = BigDecimal.ZERO;
+        }
 
         return AdminBookingSummaryResponse.builder()
                 .id(booking.getId())
@@ -271,9 +279,21 @@ public class BookingService {
                 : BigDecimal.ZERO;
 
         BigDecimal depositAmount = BigDecimal.ZERO;
+        String paymentStatus = "UNPAID";
+
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            status = "PENDING_PAYMENT";
+        } else if (booking.getPointsRedeemedAt() != null || 
+                   booking.getStatus() == BookingStatus.BOOKED || 
+                   booking.getStatus() == BookingStatus.CONFIRMED ||
+                   booking.getStatus() == BookingStatus.PLAYING || 
+                   booking.getStatus() == BookingStatus.COMPLETED) {
+            depositAmount = calculateDepositAmount(totalPrice);
+            paymentStatus = "PARTIAL";
+        }
 
         String adminNote = null;
-        String paymentStatus = "UNPAID";
 
         List<AdminBookingDetailResponse.AddonServiceItem> addOns = bookingServiceItemRepository.findByBookingId(booking.getId()).stream()
                 .map(item -> new AdminBookingDetailResponse.AddonServiceItem(
@@ -549,6 +569,23 @@ public class BookingService {
         publishBookingStatusChanged(booking, oldStatus, BookingStatus.CANCELLED);
     }
 
+    @Transactional
+    public void cancelUnpaidBooking(Integer bookingId, Integer playerId) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đặt sân với ID: " + bookingId, "Booking"));
+
+        if (booking.getPlayer() == null || !booking.getPlayer().getId().equals(playerId)) {
+            throw new ForbiddenException("Bạn không có quyền hủy đơn đặt sân này");
+        }
+
+        if (booking.getStatus() == BookingStatus.RESERVED && booking.getPointsRedeemedAt() == null) {
+            BookingStatus oldStatus = booking.getStatus();
+            booking.setStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+            publishBookingStatusChanged(booking, oldStatus, BookingStatus.CANCELLED);
+        }
+    }
+
     /**
      * Get all bookings for a specific player.
      * Uses READ-ONLY transaction since no modifications are made.
@@ -578,6 +615,12 @@ public class BookingService {
     private PlayerBookingResponse toPlayerBookingResponse(Booking booking) {
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
         BigDecimal depositAmount = calculateDepositAmount(totalPrice);
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            depositAmount = BigDecimal.ZERO;
+        } else if (booking.getStatus() == BookingStatus.CANCELLED && booking.getPointsRedeemedAt() == null) {
+            depositAmount = BigDecimal.ZERO;
+        }
         return toPlayerBookingResponse(booking, depositAmount);
     }
 
@@ -587,6 +630,10 @@ public class BookingService {
                 : "N/A";
 
         String status = booking.getStatus() != null ? booking.getStatus().name() : "N/A";
+        if ((booking.getStatus() == BookingStatus.RESERVED || booking.getStatus() == BookingStatus.PENDING)
+                && booking.getPointsRedeemedAt() == null) {
+            status = "PENDING_PAYMENT";
+        }
         BigDecimal totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
 
         return new PlayerBookingResponse(
@@ -842,7 +889,7 @@ public class BookingService {
         return totalPrice.multiply(BigDecimal.valueOf(0.5)).setScale(2, RoundingMode.HALF_UP);
     }
 
-    private void publishBookingStatusChanged(Booking booking, BookingStatus oldStatus, BookingStatus newStatus) {
+    public void publishBookingStatusChanged(Booking booking, BookingStatus oldStatus, BookingStatus newStatus) {
         if (booking.getPlayer() == null || oldStatus == newStatus) {
             return;
         }

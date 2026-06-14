@@ -134,11 +134,48 @@ public class TeamService {
         team.setStatus(request.getStatus());
         teamRepository.save(team);
 
+        User captain = team.getCaptain();
         if (request.getStatus() == TeamStatus.APPROVED) {
-            User captain = team.getCaptain();
-            captain.setTeamId(team.getId());
-            userRepository.save(captain);
+            if (captain != null) {
+                captain.setTeamId(team.getId());
+                userRepository.save(captain);
+            }
             logAdminActivity("APPROVE_TEAM", teamId.toString(), "Phê duyệt đội bóng: " + team.getName());
+
+            if (captain != null) {
+                notificationService.createNotification(
+                        captain.getId(),
+                        NotificationType.TEAM_STATUS,
+                        "Phê duyệt đội bóng",
+                        "Chúc mừng! Đội bóng '" + team.getName() + "' của bạn đã được phê duyệt thành công.",
+                        "TEAM",
+                        teamId.toString()
+                );
+            }
+        } else if (request.getStatus() == TeamStatus.REJECTED) {
+            logAdminActivity("REJECT_TEAM", teamId.toString(), "Từ chối đội bóng: " + team.getName());
+            if (captain != null) {
+                notificationService.createNotification(
+                        captain.getId(),
+                        NotificationType.TEAM_STATUS,
+                        "Từ chối đội bóng",
+                        "Rất tiếc, yêu cầu đăng ký đội bóng '" + team.getName() + "' của bạn đã bị từ chối.",
+                        "TEAM",
+                        teamId.toString()
+                );
+            }
+        } else if (request.getStatus() == TeamStatus.BANNED) {
+            logAdminActivity("BAN_TEAM", teamId.toString(), "Khóa đội bóng: " + team.getName());
+            if (captain != null) {
+                notificationService.createNotification(
+                        captain.getId(),
+                        NotificationType.TEAM_STATUS,
+                        "Đội bóng bị khóa",
+                        "Đội bóng '" + team.getName() + "' của bạn đã bị khóa bởi quản trị viên.",
+                        "TEAM",
+                        teamId.toString()
+                );
+            }
         }
 
         return mapToResponse(team);

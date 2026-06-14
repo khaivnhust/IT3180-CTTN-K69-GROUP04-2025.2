@@ -58,6 +58,15 @@ public class PlayerBookingController {
 		return ResponseEntity.noContent().build();
 	}
 
+	@PostMapping("/{bookingId}/cancel-unpaid")
+	public ResponseEntity<Void> cancelUnpaidBooking(
+			@AuthenticationPrincipal UserPrincipal principal,
+			@PathVariable Integer bookingId
+	) {
+		bookingService.cancelUnpaidBooking(bookingId, principal.getId());
+		return ResponseEntity.noContent().build();
+	}
+
 	@GetMapping
 	public ResponseEntity<Page<PlayerBookingResponse>> getMyBookings(
 			@AuthenticationPrincipal UserPrincipal principal,

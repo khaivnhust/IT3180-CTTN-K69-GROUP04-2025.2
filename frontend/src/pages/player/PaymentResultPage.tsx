@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { CheckCircle, XCircle, Home, Calendar } from "lucide-react";
 import { Button } from "@/shared/components/Button";
 import { confirmVNPayReturn } from "@/features/payment/api/paymentApi";
+import { cancelUnpaidBooking } from "@/features/booking/api/bookingApi";
 
 export const PaymentResultPage = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,13 @@ export const PaymentResultPage = () => {
   const amount = amountStr ? (parseInt(amountStr, 10) / 100).toLocaleString('vi-VN') : "0";
 
   useEffect(() => {
+    if (!isSuccess && txnRef) {
+      void cancelUnpaidBooking(parseInt(txnRef, 10)).catch((error) => {
+        console.error("Không thể tự động hủy đơn đặt sân", error);
+      });
+      return;
+    }
+
     if (!isSuccess || !txnRef) {
       return;
     }

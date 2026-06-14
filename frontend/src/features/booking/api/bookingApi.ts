@@ -89,3 +89,7 @@ export const createRecurringBooking = async (
 // export const cancelPlayerBooking = async (bookingId: number): Promise<void> => {
 //   await apiClient.delete(`/player/bookings/${bookingId}`);
 // };
+
+export const cancelUnpaidBooking = async (bookingId: number): Promise<void> => {
+  await apiClient.post(`/player/bookings/${bookingId}/cancel-unpaid`);
+};

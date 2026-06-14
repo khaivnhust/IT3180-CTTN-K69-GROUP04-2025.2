@@ -6,6 +6,7 @@ import { PointsRedemptionBox } from "@/features/payment/components/PointsRedempt
 import { usePlayerProfile } from "@/features/account/hooks/usePlayerProfile";
 import { Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
+import { cancelUnpaidBooking } from "@/features/booking/api/bookingApi";
 
 const POINT_VALUE = 100;
 
@@ -50,6 +51,19 @@ export const CheckoutPage = () => {
     );
   }
 
+  const handleGoBack = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      await cancelUnpaidBooking(bookingData.bookingId);
+    } catch (error) {
+      console.error("Lỗi khi hủy đơn đặt sân", error);
+    } finally {
+      setIsLoading(false);
+      navigate("/booking");
+    }
+  };
+
   const handlePayment = async () => {
     setIsLoading(true);
     try {
@@ -69,8 +83,9 @@ export const CheckoutPage = () => {
   return (
     <div className="container mx-auto p-4 max-w-2xl mt-10">
       <button
-        onClick={() => navigate(-1)}
-        className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+        onClick={handleGoBack}
+        disabled={isLoading}
+        className="flex items-center text-gray-600 hover:text-gray-900 mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
         Quay lại
