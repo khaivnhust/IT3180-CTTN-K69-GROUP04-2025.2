@@ -16,11 +16,10 @@ DROP TABLE IF EXISTS `teams`;
 DROP TABLE IF EXISTS `password_reset_tokens`;
 DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `time_slots`;
-DROP TABLE IF EXISTS `team_member`;
-DROP TABLE IF EXISTS `team`;
 
+-- 1. Tạo bảng users trước (Đổi id thành BIGINT để đồng bộ toàn hệ thống)
 CREATE TABLE IF NOT EXISTS `users` (
-    `id` INT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(255) NOT NULL,
     `email` VARCHAR(255) UNIQUE,
     `password` VARCHAR(255),
@@ -33,23 +32,40 @@ CREATE TABLE IF NOT EXISTS `users` (
     PRIMARY KEY (`id`)
 );
 
+-- 2. Tạo bảng teams (Đồng bộ captain_id thành BIGINT để khớp với users.id)
+CREATE TABLE IF NOT EXISTS `teams` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL UNIQUE,
+    `captain_id` BIGINT NOT NULL,
+    `description` TEXT,
+    `reputation_score` INT DEFAULT 100,
+    `status` VARCHAR(50) NOT NULL,
+    `banned_until` DATETIME DEFAULT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_teams_captain_id`
+        FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`)
+);
+
+-- 3. Tạo bảng leagues (Sửa manager_id thành BIGINT)
 CREATE TABLE IF NOT EXISTS `leagues` (
-    `id` INT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(255) NOT NULL,
     `format` VARCHAR(50) NOT NULL,
     `number_of_teams` INT NOT NULL,
     `prize` TEXT,
     `status` VARCHAR(50) NOT NULL,
-    `manager_id` INT NOT NULL,
+    `manager_id` BIGINT NOT NULL,
     `created_at` DATETIME NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_leagues_manager_id`
         FOREIGN KEY (`manager_id`) REFERENCES `users` (`id`)
 );
 
+-- 4. Tạo bảng các thông báo giải đấu
 CREATE TABLE IF NOT EXISTS `league_announcements` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `league_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `league_id` BIGINT NOT NULL,
     `title` VARCHAR(255) NOT NULL,
     `content` TEXT NOT NULL,
     `created_at` DATETIME NOT NULL,
@@ -59,10 +75,11 @@ CREATE TABLE IF NOT EXISTS `league_announcements` (
         FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE CASCADE
 );
 
+-- 5. Tạo bảng bình luận thông báo giải đấu
 CREATE TABLE IF NOT EXISTS `league_announcement_comments` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `announcement_id` INT NOT NULL,
-    `user_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `announcement_id` BIGINT NOT NULL,
+    `user_id` BIGINT NOT NULL,
     `content` TEXT NOT NULL,
     `created_at` DATETIME NOT NULL,
     PRIMARY KEY (`id`),
@@ -72,13 +89,14 @@ CREATE TABLE IF NOT EXISTS `league_announcement_comments` (
         FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
 
+-- 6. Tạo bảng sân (venues) - Đổi manager_id thành BIGINT
 CREATE TABLE IF NOT EXISTS `venues` (
-    `id` INT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(255) NOT NULL,
     `address` TEXT,
     `description` TEXT,
     `image_url` VARCHAR(255),
-    `manager_id` INT NOT NULL,
+    `manager_id` BIGINT NOT NULL,
     `open_time` TIME NOT NULL,
     `close_time` TIME NOT NULL,
     PRIMARY KEY (`id`),
@@ -86,24 +104,22 @@ CREATE TABLE IF NOT EXISTS `venues` (
         FOREIGN KEY (`manager_id`) REFERENCES `users` (`id`)
 );
 
+-- 7. Tạo bảng các sân nhỏ (pitches)
 CREATE TABLE IF NOT EXISTS `pitches` (
-    `id` INT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(255),
     `pitch_type` VARCHAR(255),
     `is_active` BIT(1) NOT NULL,
     `base_price` DECIMAL(38,2),
-    `venue_id` INT NOT NULL,
+    `venue_id` BIGINT NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_pitches_venue_id`
         FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`)
 );
 
--- ============================================================
--- TIME_SLOTS: Master Data — chỉ 11 dòng duy nhất cho toàn hệ thống
--- Không có pitch_id. Mỗi dòng là 1 khung giờ 90 phút cố định.
--- ============================================================
+-- 8. Tạo bảng khung giờ master (time_slots)
 CREATE TABLE IF NOT EXISTS `time_slots` (
-    `id` INT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
     `slot_number` INT NOT NULL,
     `start_time` TIME NOT NULL,
     `end_time` TIME NOT NULL,
@@ -113,9 +129,10 @@ CREATE TABLE IF NOT EXISTS `time_slots` (
         UNIQUE (`slot_number`)
 );
 
+-- 9. Tạo bảng luật giá (price_rules)
 CREATE TABLE IF NOT EXISTS `price_rules` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `pitch_id` INT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `pitch_id` BIGINT,
     `slot_number` INT NOT NULL,
     `is_weekend` BIT(1) NOT NULL,
     `coefficient` DECIMAL(10,2) NOT NULL,
@@ -126,10 +143,11 @@ CREATE TABLE IF NOT EXISTS `price_rules` (
         UNIQUE (`pitch_id`, `slot_number`, `is_weekend`)
 );
 
+-- 10. Tạo bảng dịch vụ đi kèm (services)
 CREATE TABLE IF NOT EXISTS `services` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `venue_id` INT,
-    `pitch_id` INT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `venue_id` BIGINT,
+    `pitch_id` BIGINT,
     `name` VARCHAR(255),
     `description` TEXT,
     `price` DECIMAL(38,2),
@@ -142,10 +160,11 @@ CREATE TABLE IF NOT EXISTS `services` (
         FOREIGN KEY (`pitch_id`) REFERENCES `pitches` (`id`)
 );
 
+-- 11. Tạo bảng đơn đặt sân (bookings) - Đổi player_id thành BIGINT
 CREATE TABLE IF NOT EXISTS `bookings` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `player_id` INT,
-    `pitch_id` INT,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `player_id` BIGINT,
+    `pitch_id` BIGINT,
     `booking_date` DATE,
     `start_time` TIME,
     `end_time` TIME,
@@ -154,7 +173,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `total_price` DECIMAL(38,2),
     `pricing_mode` VARCHAR(50) DEFAULT 'AUTO',
     `created_at` DATETIME,
-    `time_slot_id` INT NOT NULL,
+    `time_slot_id` BIGINT NOT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_bookings_player_id`
         FOREIGN KEY (`player_id`) REFERENCES `users` (`id`),
@@ -166,11 +185,12 @@ CREATE TABLE IF NOT EXISTS `bookings` (
         UNIQUE (`booking_date`, `pitch_id`, `time_slot_id`)
 );
 
+-- 12. Tạo bảng đánh giá sân bóng
 CREATE TABLE IF NOT EXISTS `pitch_reviews` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `pitch_id` INT NOT NULL,
-    `player_id` INT NOT NULL,
-    `booking_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `pitch_id` BIGINT NOT NULL,
+    `player_id` BIGINT NOT NULL,
+    `booking_id` BIGINT NOT NULL,
     `rating` INT NOT NULL,
     `content` TEXT NOT NULL,
     `created_at` DATETIME NOT NULL,
@@ -185,10 +205,11 @@ CREATE TABLE IF NOT EXISTS `pitch_reviews` (
         UNIQUE (`booking_id`)
 );
 
+-- 13. Chi tiết dịch vụ đã đặt
 CREATE TABLE IF NOT EXISTS `booking_services` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `booking_id` INT NOT NULL,
-    `service_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `booking_id` BIGINT NOT NULL,
+    `service_id` BIGINT NOT NULL,
     `quantity` INT NOT NULL,
     `price_at_booking` DECIMAL(38,2) NOT NULL,
     PRIMARY KEY (`id`),
@@ -198,10 +219,11 @@ CREATE TABLE IF NOT EXISTS `booking_services` (
         FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
 );
 
+-- 14. Quản lý thanh toán đặt sân
 CREATE TABLE IF NOT EXISTS `booking_payments` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `booking_id` INT NOT NULL,
-    `payer_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `booking_id` BIGINT NOT NULL,
+    `payer_id` BIGINT NOT NULL,
     `paid_amount` DECIMAL(38,2) NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL,
     `payment_status` VARCHAR(50) NOT NULL,
@@ -214,25 +236,12 @@ CREATE TABLE IF NOT EXISTS `booking_payments` (
         FOREIGN KEY (`payer_id`) REFERENCES `users` (`id`)
 );
 
-CREATE TABLE IF NOT EXISTS `teams` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(255) NOT NULL,
-    `captain_id` INT NOT NULL,
-    `description` TEXT,
-    `reputation_score` INT DEFAULT 100,
-    `status` VARCHAR(50) NOT NULL,
-    `banned_until` DATETIME DEFAULT NULL,
-    `created_at` DATETIME NOT NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `fk_teams_captain_id`
-        FOREIGN KEY (`captain_id`) REFERENCES `users` (`id`)
-);
-
+-- 15. Đăng ký tham gia giải đấu (Sửa captain_id sang BIGINT)
 CREATE TABLE IF NOT EXISTS `league_registrations` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `league_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `league_id` BIGINT NOT NULL,
     `team_id` BIGINT NOT NULL,
-    `captain_id` INT NOT NULL,
+    `captain_id` BIGINT NOT NULL,
     `status` VARCHAR(50) NOT NULL,
     `created_at` DATETIME NOT NULL,
     PRIMARY KEY (`id`),
@@ -246,18 +255,20 @@ CREATE TABLE IF NOT EXISTS `league_registrations` (
         UNIQUE (`league_id`, `team_id`)
 );
 
+-- 16. Thành viên đội bóng
 CREATE TABLE IF NOT EXISTS `team_members` (
     `team_id` BIGINT NOT NULL,
     `user_email` VARCHAR(255) NOT NULL,
     `status` VARCHAR(50) NOT NULL,
     PRIMARY KEY (`team_id`, `user_email`),
     CONSTRAINT `fk_team_members_team_id`
-        FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`)
+        FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE
 );
 
+-- 17. Lịch thi đấu trận đấu (matches)
 CREATE TABLE IF NOT EXISTS `matches` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `venue_id` INT NOT NULL,
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `venue_id` BIGINT NOT NULL,
     `host_team_id` BIGINT,
     `guest_team_id` BIGINT,
     `skill_level` VARCHAR(50) NOT NULL,
@@ -270,25 +281,4 @@ CREATE TABLE IF NOT EXISTS `matches` (
         FOREIGN KEY (`host_team_id`) REFERENCES `teams` (`id`),
     CONSTRAINT `fk_matches_guest_team_id`
         FOREIGN KEY (`guest_team_id`) REFERENCES `teams` (`id`)
-);
--- Tạo bảng lưu thông tin Đội bóng
-CREATE TABLE IF NOT EXISTS team (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    logo_url VARCHAR(255),
-    level VARCHAR(50) NOT NULL, -- Ví dụ: Chuyên nghiệp, Bán chuyên, Nghiệp dư
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tạo bảng lưu thành viên Đội bóng (Bao gồm Đội trưởng và Thành viên)
-CREATE TABLE IF NOT EXISTS team_member (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    team_id BIGINT NOT NULL,
-    username VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    role VARCHAR(30) NOT NULL,      -- 'CAPTAIN' hoặc 'MEMBER'
-    status VARCHAR(30) NOT NULL,    -- 'APPROVED' hoặc 'PENDING' (Chờ duyệt khi được mời)
-    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_team FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
-    CONSTRAINT uq_team_user UNIQUE (team_id, username) -- Một người không thể tham gia 1 đội 2 lần
 );
