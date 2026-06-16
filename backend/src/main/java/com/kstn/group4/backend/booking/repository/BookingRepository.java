@@ -24,7 +24,8 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     @Query("SELECT b FROM Booking b " +
             "LEFT JOIN FETCH b.player " +
-            "LEFT JOIN FETCH b.pitch " +
+            "LEFT JOIN FETCH b.pitch p " +
+            "LEFT JOIN FETCH p.venue " +
             "WHERE b.id = :id")
     Optional<Booking> findByIdWithDetails(@Param("id") Integer id);
 
@@ -35,15 +36,16 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     @Query("SELECT DISTINCT b FROM Booking b " +
             "LEFT JOIN FETCH b.player " +
-            "LEFT JOIN FETCH b.pitch " +
+            "LEFT JOIN FETCH b.pitch p " +
+            "LEFT JOIN FETCH p.venue " +
             "WHERE (:date IS NULL OR b.bookingDate = :date) " +
             "AND (:status IS NULL OR b.status = :status) " +
-            "AND (:pitchId IS NULL OR b.pitch.id = :pitchId) " +
+            "AND (:venueId IS NULL OR p.venue.id = :venueId) " +
             "ORDER BY b.bookingDate DESC, b.startTime DESC")
     Page<Booking> searchByFilters(
             @Param("date") LocalDate date,
             @Param("status") BookingStatus status,
-            @Param("pitchId") Integer pitchId,
+            @Param("venueId") Integer venueId,
             Pageable pageable
     );
 
@@ -146,6 +148,19 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     );
 
     @Query("SELECT COUNT(b) > 0 FROM Booking b " +
+            "WHERE b.id <> :bookingId " +
+            "AND b.pitch.id = :pitchId " +
+            "AND b.timeSlot.id = :timeSlotId " +
+            "AND b.bookingDate = :bookingDate " +
+            "AND b.status <> com.kstn.group4.backend.booking.entity.BookingStatus.CANCELLED")
+    boolean existsByPitchIdAndTimeSlotIdAndBookingDateExcludingBooking(
+            @Param("bookingId") Integer bookingId,
+            @Param("pitchId") Integer pitchId,
+            @Param("timeSlotId") Integer timeSlotId,
+            @Param("bookingDate") LocalDate bookingDate
+    );
+
+    @Query("SELECT COUNT(b) > 0 FROM Booking b " +
             "WHERE b.pitch.id = :pitchId " +
             "AND b.bookingDate = :bookingDate " +
             "AND b.status <> com.kstn.group4.backend.booking.entity.BookingStatus.CANCELLED " +
@@ -166,4 +181,10 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             @Param("venueId") Integer venueId,
             @Param("managerId") Integer managerId
     );
+
+    @Query("SELECT b FROM Booking b " +
+            "WHERE b.status = com.kstn.group4.backend.booking.entity.BookingStatus.RESERVED " +
+            "AND b.pointsRedeemedAt IS NULL " +
+            "AND b.createdAt < :threshold")
+    List<Booking> findExpiredReservedBookings(@Param("threshold") java.time.LocalDateTime threshold);
 }
