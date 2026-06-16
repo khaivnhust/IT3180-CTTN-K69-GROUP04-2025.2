@@ -20,15 +20,19 @@ spring:
           starttls:
             enable: false
 
+  # ============================================================
+  # ĐÃ SỬA: Cấu hình nhận biến môi trường linh hoạt cho Database
+  # ============================================================
   datasource:
-    url: jdbc:mysql://localhost:3306/football_booking?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
+    url: ${DB_URL:jdbc:mysql://localhost:3306/football_booking?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:mixisql123@}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: none
+      # Chuyển thành update để tự tạo/cập nhật bảng từ class Entity Java, giải phóng khỏi lỗi script .sql
+      ddl-auto: update
     show-sql: true
     defer-datasource-initialization: true
     properties:
@@ -38,20 +42,25 @@ spring:
 
   docker:
     compose:
-      enabled: true
+      # ĐÃ SỬA: Tắt tự động kích hoạt docker-compose khi deploy lên Cloud (tránh xung đột môi trường)
+      enabled: false
       file: ./docker-compose.yml
       lifecycle-management: start_and_stop
       wait-for-services: true
 
+  # ============================================================
+  # ĐÃ SỬA: Chuyển mode sang 'never' để bỏ qua các file script lỗi
+  # ============================================================
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations: classpath:schema.sql
       data-locations: classpath:seed.sql
       continue-on-error: true
 
 server:
-  port: 8080
+  # Tự động nhận Port do Render cấp phát, mặc định local là 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /api/v1
 
