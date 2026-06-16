@@ -3,6 +3,7 @@ package com.kstn.group4.backend.config.security;
 import com.kstn.group4.backend.config.security.jwt.AuthTokenFilter;
 import com.kstn.group4.backend.config.security.jwt.JwtTokenProvider;
 import com.kstn.group4.backend.config.security.services.UserDetailsServiceImplement;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -79,17 +80,24 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/public/**", "/pitches/**").permitAll()
+                        // ĐÃ SỬA: Cho phép Preflight OPTIONS đi qua thoải mái
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // ĐÃ SỬA: Thêm /api/v1/ tiền tố để khớp tuyệt đối với context-path
+                        .requestMatchers("/api/v1/auth/**", "/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**", "/api/v1/pitches/**", "/pitches/**").permitAll()
+                        .requestMatchers("/api/v1/player/venues/**", "/api/v1/player/venues").permitAll() // Cho phép xem sân công khai
+                        
+                        // Giữ nguyên các cấu hình phân quyền khác của nhóm bạn
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/payment/vnpay/ipn").permitAll()
-                        .requestMatchers("/teams", "/teams/**").hasAnyRole("PLAYER", "ADMIN")
-                        .requestMatchers("/match/**", "/matches", "/matches/**").hasAnyRole("PLAYER", "ADMIN")
-                        .requestMatchers("/notifications", "/notifications/**").hasAnyRole("PLAYER", "ADMIN")
-.requestMatchers("/player/**").hasRole("PLAYER")
-.requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payment/vnpay/ipn").permitAll()
+                        
+                        .requestMatchers("/api/v1/teams", "/api/v1/teams/**").hasAnyRole("PLAYER", "ADMIN")
+                        .requestMatchers("/api/v1/match/**", "/api/v1/matches", "/api/v1/matches/**").hasAnyRole("PLAYER", "ADMIN")
+                        .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**").hasAnyRole("PLAYER", "ADMIN")
+                        .requestMatchers("/api/v1/player/**").hasRole("PLAYER")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
@@ -102,9 +110,19 @@ public class WebSecurityConfig {
             @Value("${application.cors.allowed-origins:http://localhost:5173}") List<String> allowedOrigins
     ) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("*"));
-        configuration.setAllowedHeaders(List.of("*"));
+        
+        // ĐÃ SỬA: Tạo danh sách nguồn động bảo đảm đọc tốt cả biến môi trường Render thô
+        List<String> finalOrigins = new ArrayList<>(allowedOrigins);
+        String envOrigin = System.getenv("FRONTEND_ORIGIN");
+        if (envOrigin != null && !envOrigin.trim().isEmpty()) {
+            finalOrigins.add(envOrigin.trim());
+        }
+        // Backup cứng thêm cái link Netlify của bạn để bảo đảm ăn chắc 100%
+        finalOrigins.add("https://fanciful-monstera-4ef7d2.netlify.app");
+
+        configuration.setAllowedOrigins(finalOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Origin", "Accept", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
